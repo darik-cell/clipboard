@@ -7,6 +7,7 @@ set -euo pipefail
 #   - delete-remote  : удалить ветку только на origin
 #   - delete-both    : удалить локально + на origin
 #   - create         : создать ветку от default-ветки (master/main/remote HEAD)
+#   - checkout       : переключиться на ветку (локальную или remote tracking)
 #
 # Usage:
 #   ./multi-git-branch.sh /abs/path/repos.txt branch_name ACTION [options]
@@ -33,7 +34,7 @@ Usage:
   $0 /abs/path/repos.txt branch_name ACTION [options]
 
 ACTION:
-  delete-local | delete-remote | delete-both | create
+  delete-local | delete-remote | delete-both | create | checkout
 
 Options:
   --remote NAME
@@ -48,6 +49,7 @@ Examples:
   $0 /abs/repos.txt feature/foo delete-both
   $0 /abs/repos.txt feature/foo delete-remote
   $0 /abs/repos.txt feature/foo create --pull --push
+  $0 /abs/repos.txt feature/foo checkout
 EOF
 }
 
@@ -71,7 +73,7 @@ if [[ ! -f "$LIST_FILE" ]]; then
 fi
 
 case "$ACTION" in
-  delete-local|delete-remote|delete-both|create) ;;
+  delete-local|delete-remote|delete-both|create|checkout) ;;
   *) err "Unknown ACTION: $ACTION"; usage; exit 1 ;;
 esac
 
@@ -169,6 +171,31 @@ create_branch_from_base() {
   fi
 }
 
+checkout_branch() {
+  local b="$1"
+  local cur=""
+
+  cur="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+  if [[ "$cur" == "$b" ]]; then
+    log "  Already on branch: $b"
+    return 0
+  fi
+
+  if git show-ref --verify --quiet "refs/heads/${b}"; then
+    git switch "$b" >/dev/null
+    log "  Checked out local: $b"
+    return 0
+  fi
+
+  if git show-ref --verify --quiet "refs/remotes/${REMOTE}/${b}"; then
+    git switch -c "$b" --track "${REMOTE}/${b}" >/dev/null
+    log "  Checked out and tracking: ${REMOTE}/${b}"
+    return 0
+  fi
+
+  warn "  Branch not found locally or on ${REMOTE}: $b (skip)"
+}
+
 process_repo() {
   local repo="$1"
 
@@ -202,16 +229,18 @@ process_repo() {
     fi
   fi
 
-  local base
-  base="$(get_default_branch)"
+  local base=""
+  if [[ "$ACTION" == "delete-local" || "$ACTION" == "delete-both" || "$ACTION" == "create" ]]; then
+    base="$(get_default_branch)"
 
-  # Для delete-local/delete-both: если удаляем текущую ветку — сперва уйти на base
-  # Для create: тоже переходим на base
-  ensure_on_branch "$base"
+    # Для delete-local/delete-both: если удаляем текущую ветку — сперва уйти на base
+    # Для create: тоже переходим на base
+    ensure_on_branch "$base"
 
-  if [[ "$DO_PULL" -eq 1 ]]; then
-    # Обновляем base строго fast-forward
-    git pull --ff-only "$REMOTE" "$base" >/dev/null || true
+    if [[ "$DO_PULL" -eq 1 ]]; then
+      # Обновляем base строго fast-forward
+      git pull --ff-only "$REMOTE" "$base" >/dev/null || true
+    fi
   fi
 
   case "$ACTION" in
@@ -229,6 +258,9 @@ process_repo() {
     create)
       # Создать ветку от base (обычно master/main/remote HEAD)
       create_branch_from_base "$BRANCH" "$base"
+      ;;
+    checkout)
+      checkout_branch "$BRANCH"
       ;;
   esac
 }
