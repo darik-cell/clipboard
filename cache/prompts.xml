@@ -1,0 +1,27 @@
+<prompts>
+    <prompt>
+       Получается у меня может во многих потоках для одного и того же TraceableCaffeineDirectCacheEntry сделаться запрос .get("alex-user"), если его нет в кэшэ, то тут:
+                override suspend fun invoke(key: Key): Value {
+                    var completableDeferred: CompletableDeferred<Value>? = null
+                    val deferred = cache.get(key) {
+                        CompletableDeferred<Value>().also {
+                            completableDeferred = it
+                        }
+                    }!!
+
+                    completableDeferred?.let { cd ->
+                        try {
+                            cd.complete(f(key))
+                        } catch (cause: Exception) {
+                            cache.invalidate(key)
+                            cd.completeExceptionally(cause)
+                        }
+                    }
+
+                    return deferred.await()
+                }
+
+    создастся CompletableDeferred ссылка на него будет и в deffered и в completableDeferred для чего это?, если в кэшэ есть для этого ключа другой Deffered и он еще не выполнен то клиент будет ждать
+    пока deferred.await() вернет значение, а если уже для этого ключа все было успешно выполнено, то тогда Deffered из кэша на deferred.await() сразу будет отдавать значение?
+    </prompt>
+</prompts>

@@ -1,0 +1,7 @@
+/home/a.alenushka/.gradle/caches/modules-2/files-2.1/ru.tinkoff/kapi-cache-caffeine/0.8.4/4cc3cab91a4f5ec81261aaa23a6647d0bd7a0d5a/kapi-cache-caffeine-0.8.4-sources.jar!/META-INF/MANIFEST.MF
+/home/a.alenushka/.gradle/caches/modules-2/files-2.1/ru.tinkoff/kapi-cache-caffeine/0.8.4/4cc3cab91a4f5ec81261aaa23a6647d0bd7a0d5a/kapi-cache-caffeine-0.8.4-sources.jar!/ru/tinkoff/cache/caffeine/CaffeineDirectCacheEntry.kt
+/home/a.alenushka/.gradle/caches/modules-2/files-2.1/ru.tinkoff/kapi-cache-caffeine/0.8.4/4cc3cab91a4f5ec81261aaa23a6647d0bd7a0d5a/kapi-cache-caffeine-0.8.4-sources.jar!/ru/tinkoff/cache/caffeine/CaffeineEntrySyntax.kt
+/home/a.alenushka/.gradle/caches/modules-2/files-2.1/ru.tinkoff/kapi-cache-caffeine/0.8.4/4cc3cab91a4f5ec81261aaa23a6647d0bd7a0d5a/kapi-cache-caffeine-0.8.4-sources.jar!/ru/tinkoff/cache/caffeine/CaffeineFallbackCacheEntry.kt
+/home/a.alenushka/.gradle/caches/modules-2/files-2.1/ru.tinkoff/kapi-cache-caffeine/0.8.4/4cc3cab91a4f5ec81261aaa23a6647d0bd7a0d5a/kapi-cache-caffeine-0.8.4-sources.jar!/ru/tinkoff/cache/caffeine/TraceableCaffeineDirectCacheEntry.kt
+/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/configuration/CacheConfig.kt
+/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/logic/operation/GetQuestionsOperation.kt

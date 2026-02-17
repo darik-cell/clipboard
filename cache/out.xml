@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sourceCode>
+  <MANIFEST.MF>
+    <path>/home/a.alenushka/.gradle/caches/modules-2/files-2.1/ru.tinkoff/kapi-cache-caffeine/0.8.4/4cc3cab91a4f5ec81261aaa23a6647d0bd7a0d5a/kapi-cache-caffeine-0.8.4-sources.jar!/META-INF/MANIFEST.MF</path>
+    <content>Manifest-Version: 1.0
+
+</content>
+  </MANIFEST.MF>
+  <CaffeineDirectCacheEntry.kt>
+    <path>/home/a.alenushka/.gradle/caches/modules-2/files-2.1/ru.tinkoff/kapi-cache-caffeine/0.8.4/4cc3cab91a4f5ec81261aaa23a6647d0bd7a0d5a/kapi-cache-caffeine-0.8.4-sources.jar!/ru/tinkoff/cache/caffeine/CaffeineDirectCacheEntry.kt</path>
+    <content>package ru.tinkoff.cache.caffeine
+
+import com.github.benmanes.caffeine.cache.Cache
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.Deferred
+import ru.tinkoff.cache.CacheEntry
+import ru.tinkoff.cache.CacheFunction
+
+class CaffeineDirectCacheEntry&lt;Key : Any, Value&gt;(private val cache: Cache&lt;Key, Deferred&lt;Value&gt;&gt;) :
+    CacheEntry&lt;Key, Value&gt; {
+    override fun makeFunction(f: suspend (Key) -&gt; Value): CacheFunction&lt;Key, Value&gt; =
+        object : CacheFunction&lt;Key, Value&gt; {
+            override suspend fun invoke(key: Key): Value {
+                var completableDeferred: CompletableDeferred&lt;Value&gt;? = null
+                val deferred = cache.get(key) {
+                    CompletableDeferred&lt;Value&gt;().also {
+                        completableDeferred = it
+                    }
+                }!!
+
+                completableDeferred?.let { cd -&gt;
+                    try {
+                        cd.complete(f(key))
+                    } catch (cause: Exception) {
+                        cache.invalidate(key)
+                        cd.completeExceptionally(cause)
+                    }
+                }
+
+                return deferred.await()
+            }
+        }
+
+    override suspend fun invalidate(key: Key) {
+        cache.invalidate(key)
+    }
+
+    override suspend fun invalidateAll(keys: Iterable&lt;Key&gt;) {
+        cache.invalidateAll(keys)
+    }
+
+    override suspend fun invalidateAll() {
+        cache.invalidateAll()
+    }
+}
+</content>
+  </CaffeineDirectCacheEntry.kt>
+  <CaffeineEntrySyntax.kt>
+    <path>/home/a.alenushka/.gradle/caches/modules-2/files-2.1/ru.tinkoff/kapi-cache-caffeine/0.8.4/4cc3cab91a4f5ec81261aaa23a6647d0bd7a0d5a/kapi-cache-caffeine-0.8.4-sources.jar!/ru/tinkoff/cache/caffeine/CaffeineEntrySyntax.kt</path>
+    <content>package ru.tinkoff.cache.caffeine
+
+import com.github.benmanes.caffeine.cache.Cache
+import com.github.benmanes.caffeine.cache.Caffeine
+import io.opentelemetry.api.trace.Tracer
+import kotlinx.coroutines.Deferred
+
+fun &lt;Key: Any, Value&gt; Cache&lt;Key, Deferred&lt;Value&gt;&gt;.directEntry(): CaffeineDirectCacheEntry&lt;Key, Value&gt; =
+        CaffeineDirectCacheEntry(this)
+
+fun &lt;Key: Any, Value&gt; Cache&lt;Key, Deferred&lt;Value&gt;&gt;.traceableDirectEntry(tracer: Tracer, cacheName: String): TraceableCaffeineDirectCacheEntry&lt;Key, Value&gt; =
+    TraceableCaffeineDirectCacheEntry(tracer, cacheName, this)
+
+fun &lt;Key: Any, Value&gt; Cache&lt;Key, Value&gt;.fallbackEntry(): CaffeineFallbackCacheEntry&lt;Key, Value&gt; =
+    CaffeineFallbackCacheEntry(this)
+
+fun &lt;Key: Any, Value&gt; Caffeine&lt;Any, Any&gt;.directEntry(): CaffeineDirectCacheEntry&lt;Key, Value&gt; =
+        this.build&lt;Key, Deferred&lt;Value&gt;&gt;().directEntry()
+
+fun &lt;Key: Any, Value&gt; Caffeine&lt;Any, Any&gt;.traceableDirectEntry(tracer: Tracer, cacheName: String): TraceableCaffeineDirectCacheEntry&lt;Key, Value&gt; =
+    this.build&lt;Key, Deferred&lt;Value&gt;&gt;().traceableDirectEntry(tracer, cacheName)
+
+fun &lt;Key: Any, Value&gt; Caffeine&lt;Any, Any&gt;.fallbackEntry(): CaffeineFallbackCacheEntry&lt;Key, Value&gt; =
+        this.build&lt;Key, Value&gt;().fallbackEntry()</content>
+  </CaffeineEntrySyntax.kt>
+  <CaffeineFallbackCacheEntry.kt>
+    <path>/home/a.alenushka/.gradle/caches/modules-2/files-2.1/ru.tinkoff/kapi-cache-caffeine/0.8.4/4cc3cab91a4f5ec81261aaa23a6647d0bd7a0d5a/kapi-cache-caffeine-0.8.4-sources.jar!/ru/tinkoff/cache/caffeine/CaffeineFallbackCacheEntry.kt</path>
+    <content>package ru.tinkoff.cache.caffeine
+
+import com.github.benmanes.caffeine.cache.Cache
+import kotlinx.coroutines.coroutineScope
+import ru.tinkoff.cache.CacheEntry
+import ru.tinkoff.cache.CacheFunction
+
+class CaffeineFallbackCacheEntry&lt;Key : Any, Value&gt;(private val cache: Cache&lt;Key, Value&gt;) : CacheEntry&lt;Key, Value&gt; {
+    override fun makeFunction(f: suspend (Key) -&gt; Value): CacheFunction&lt;Key, Value&gt; =
+        object : CacheFunction&lt;Key, Value&gt; {
+            override suspend fun invoke(key: Key): Value = coroutineScope {
+                try {
+                    val res = f(key)
+                    cache.put(key, res)
+                    res
+                } catch (e: Exception) {
+                    cache.getIfPresent(key) ?: throw e
+                }
+            }
+        }
+
+    override suspend fun invalidate(key: Key) {
+        cache.invalidate(key)
+    }
+
+    override suspend fun invalidateAll(keys: Iterable&lt;Key&gt;) {
+        cache.invalidateAll(keys)
+    }
+
+    override suspend fun invalidateAll() {
+        cache.invalidateAll()
+    }
+}
+</content>
+  </CaffeineFallbackCacheEntry.kt>
+  <TraceableCaffeineDirectCacheEntry.kt>
+    <path>/home/a.alenushka/.gradle/caches/modules-2/files-2.1/ru.tinkoff/kapi-cache-caffeine/0.8.4/4cc3cab91a4f5ec81261aaa23a6647d0bd7a0d5a/kapi-cache-caffeine-0.8.4-sources.jar!/ru/tinkoff/cache/caffeine/TraceableCaffeineDirectCacheEntry.kt</path>
+    <content>package ru.tinkoff.cache.caffeine
+
+import com.github.benmanes.caffeine.cache.Cache
+import io.opentelemetry.api.trace.SpanKind
+import io.opentelemetry.api.trace.StatusCode
+import io.opentelemetry.api.trace.Tracer
+import kotlinx.coroutines.Deferred
+import ru.tinkoff.cache.CacheEntry
+import ru.tinkoff.cache.CacheFunction
+import ru.tinkoff.core.ContextValue
+import ru.tinkoff.logging.LoggingContext
+import ru.tinkoff.opentelemetry.OpentelemetryContext
+import ru.tinkoff.opentelemetry.SpanContext
+
+class TraceableCaffeineDirectCacheEntry&lt;Key : Any, Value&gt;(
+    private val tracer: Tracer,
+    private val cacheName: String,
+    cache: Cache&lt;Key, Deferred&lt;Value&gt;&gt;,
+) : CacheEntry&lt;Key, Value&gt; {
+    private val baseCache: CaffeineDirectCacheEntry&lt;Key, Value&gt; = cache.directEntry()
+
+    override fun makeFunction(f: suspend (Key) -&gt; Value): CacheFunction&lt;Key, Value&gt; =
+        object : CacheFunction&lt;Key, Value&gt; {
+            override suspend fun invoke(key: Key): Value {
+
+                return withTracing(&quot;COMPUTE_IF_ABSENT&quot;, key) {
+                    baseCache.makeFunction(f)(key)
+                }
+            }
+
+        }
+
+    override suspend fun invalidate(key: Key) {
+        withTracing(&quot;INVALIDATE&quot;, key) {
+            baseCache.invalidate(key)
+        }
+    }
+
+    override suspend fun invalidateAll(keys: Iterable&lt;Key&gt;) {
+        withTracing(&quot;INVALIDATE_ALL&quot;) {
+            baseCache.invalidateAll(keys)
+        }
+    }
+
+    override suspend fun invalidateAll() {
+        withTracing(&quot;INVALIDATE_ALL&quot;) {
+            baseCache.invalidateAll()
+        }
+    }
+
+    private suspend inline fun &lt;R&gt; withTracing(operation: String, key: Key? = null, block: suspend () -&gt; R): R {
+        val span = tracer.spanBuilder(&quot;cache.$cacheName&quot;)
+            .setAttribute(&quot;origin&quot;, &quot;caffeine&quot;)
+            .setSpanKind(SpanKind.INTERNAL)
+            .setAttribute(&quot;operation&quot;, operation)
+            .setParent(ContextValue[OpentelemetryContext])
+            .apply {
+                key?.let {
+                    setAttribute(&quot;key&quot;, it.toString())
+                }
+            }.startSpan()
+
+        ContextValue[SpanContext] = span
+
+        LoggingContext.put(&quot;spanId&quot;, span.spanContext.spanId)
+        LoggingContext.put(&quot;traceId&quot;, span.spanContext.traceId)
+        span.storeInContext(ContextValue[OpentelemetryContext])
+
+        return runCatching {
+            block()
+        }.onFailure {
+            span.setStatus(StatusCode.ERROR)
+            span.recordException(it)
+        }.also {
+            span.end()
+        }.getOrThrow()
+    }
+}
+</content>
+  </TraceableCaffeineDirectCacheEntry.kt>
+  <CacheConfig.kt>
+    <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/configuration/CacheConfig.kt</path>
+    <content>package ru.tinkoff.invest.testing.api.configuration
+
+import com.github.benmanes.caffeine.cache.Caffeine
+import io.opentelemetry.api.trace.Tracer
+import io.prometheus.client.CollectorRegistry
+import io.prometheus.client.cache.caffeine.CacheMetricsCollector
+import kotlinx.coroutines.Deferred
+import ru.tinkoff.cache.caffeine.TraceableCaffeineDirectCacheEntry
+import ru.tinkoff.cache.caffeine.traceableDirectEntry
+import ru.tinkoff.invest.testing.api.dto.dao.TestQuestionsDto
+import ru.tinkoff.invest.testing.api.dto.enums.ClientType
+import java.util.UUID
+
+object CacheModule {
+
+    fun cacheManager(cacheConfig: CacheConfig, registry: CollectorRegistry, tracer: Tracer): CacheManager {
+        val investIdBySiebelCache = Caffeine.from(cacheConfig.investIdBySiebel)
+            .build&lt;String, Deferred&lt;UUID?&gt;&gt;()
+        val questionsByTestId = Caffeine.from(cacheConfig.questionsByTestIdCache)
+            .build&lt;UUID, Deferred&lt;TestQuestionsDto&gt;&gt;()
+        val investTypeByInvestId = Caffeine.from(cacheConfig.investTypeByInvestIdCache)
+            .build&lt;UUID, Deferred&lt;ClientType?&gt;&gt;()
+
+        val cacheMetricsCollector = CacheMetricsCollector()
+        cacheMetricsCollector.register&lt;CacheMetricsCollector&gt;(registry)
+        cacheMetricsCollector.addCache(&quot;investIdBySiebelCache&quot;, investIdBySiebelCache)
+        cacheMetricsCollector.addCache(&quot;questionsByTestIdCache&quot;, questionsByTestId)
+        cacheMetricsCollector.addCache(&quot;investTypeByInvestId&quot;, investTypeByInvestId)
+
+        return CacheManager(
+            investIdBySiebelCache.traceableDirectEntry(tracer, &quot;investIdBySiebelCache&quot;),
+            questionsByTestId.traceableDirectEntry(tracer, &quot;questionsByTestIdCache&quot;),
+            investTypeByInvestId.traceableDirectEntry(tracer, &quot;investTypeByInvestId&quot;),
+        )
+    }
+}
+
+data class CacheManager(
+    val investIdBySiebelCache: TraceableCaffeineDirectCacheEntry&lt;String, UUID?&gt;,
+    val questionsByTestIdCache: TraceableCaffeineDirectCacheEntry&lt;UUID, TestQuestionsDto&gt;,
+    val investTypeByInvestIdCache: TraceableCaffeineDirectCacheEntry&lt;UUID, ClientType?&gt;,
+)
+</content>
+  </CacheConfig.kt>
+  <GetQuestionsOperation.kt>
+    <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/logic/operation/GetQuestionsOperation.kt</path>
+    <content>package ru.tinkoff.invest.testing.api.logic.operation
+
+import ru.tinkoff.invest.kutils.errors.functions.throwsBusinessException
+import ru.tinkoff.invest.kutils.kapi.extensions.putMdc
+import ru.tinkoff.invest.testing.api.builder.http.toQuestionBuilder
+import ru.tinkoff.invest.testing.api.configuration.CacheManager
+import ru.tinkoff.invest.testing.api.configuration.CategoryMapping
+import ru.tinkoff.invest.testing.api.configuration.LogicConfig
+import ru.tinkoff.invest.testing.api.configuration.SectionParams
+import ru.tinkoff.invest.testing.api.dto.dao.AnswerDto
+import ru.tinkoff.invest.testing.api.dto.dao.QuestionDto
+import ru.tinkoff.invest.testing.api.dto.dao.TestQuestionsDto
+import ru.tinkoff.invest.testing.api.dto.enums.QuestionSection
+import ru.tinkoff.invest.testing.api.dto.enums.TestTypes
+import ru.tinkoff.invest.testing.api.error.exception.BusinessExceptionCode
+import ru.tinkoff.invest.testing.api.helper.BusinessWrapper
+import ru.tinkoff.invest.testing.api.helper.chooseLoreQuestions
+import ru.tinkoff.invest.testing.api.helper.nullableInvalidateCache
+import ru.tinkoff.invest.testing.api.integration.http.AccountClientAdapter
+import ru.tinkoff.invest.testing.api.integration.kafka.KafkaClientAdapter
+import ru.tinkoff.invest.testing.api.integration.testing.TestingDaoAdapter
+import ru.tinkoff.invest.testing.api.logic.service.NonQualifiedTestCategoryChecker
+import ru.tinkoff.invest.testing.api.model.GetQuestionResponse
+import java.util.UUID
+import kotlin.math.max
+import kotlin.random.Random
+
+class GetQuestionsOperation(
+    private val accountClientAdapter: AccountClientAdapter,
+    private val kafkaClientAdapter: KafkaClientAdapter,
+    private val testingDaoAdapter: TestingDaoAdapter,
+    private val questionSection: Map&lt;QuestionSection, SectionParams&gt;,
+    private val cacheManager: CacheManager,
+    private val categoryMapping: CategoryMapping,
+    private val nonQualifiedTestCategoryChecker: NonQualifiedTestCategoryChecker,
+    private val testTypesForStarted: List&lt;TestTypes&gt;,
+    logicConfig: LogicConfig,
+) {
+    private val wrapper = BusinessWrapper()
+    private val countAnswer = logicConfig.countAnswer
+
+    suspend operator fun invoke(testId: UUID, siebelId: String): GetQuestionResponse = wrapper.wrap {
+        val investId = cacheManager.investIdBySiebelCache.makeFunction(
+            accountClientAdapter::getInvestId,
+            nullableInvalidateCache(),
+        ).invoke(siebelId) ?: throwsBusinessException(
+            BusinessExceptionCode.INVEST_ID_NOT_FOUND,
+            message = &quot;siebelId = $siebelId&quot;,
+        )
+        investId.putMdc(&quot;investId&quot;)
+
+        val (testType, questions, answers) = cacheManager.questionsByTestIdCache.makeFunction(
+            this::getQuestions,
+        ) {
+            invalidateIf { it.questions.isEmpty() }
+        }.invoke(testId)
+
+        var (selfQuestions, loreQuestions) = questions.partition { q -&gt; q.section == QuestionSection.SELF }
+
+        val hasSelfSectionResult = testingDaoAdapter.hasSelfSectionResult(investId, testId)
+        if (hasSelfSectionResult) selfQuestions = emptyList()
+
+        val chosenQuestions = chooseLoreQuestions(loreQuestions, categoryMapping)
+            .ifEmpty { throwsBusinessException(BusinessExceptionCode.LORE_QUESTIONS_NOT_FOUND) }
+
+        val resultQuestions = (selfQuestions + chosenQuestions)
+            .sortedWith(
+                compareBy(
+                    { questionSection.getValue(it.section).position },
+                    {
+                        val section = questionSection.getValue(it.section)
+                        if (section.random) {
+                            Random.nextInt()
+                        } else {
+                            it.position
+                        }
+                    },
+                ),
+            )
+
+        val filteredAllAnswers: MutableList&lt;AnswerDto&gt; = mutableListOf()
+        answers
+            .groupBy { it.questionId }
+            .forEach { answersOfOneQuestion -&gt;
+                val questionDto = questions.first { questionDto -&gt;
+                    answersOfOneQuestion.key == questionDto.id
+                }
+
+                if (!questionSection.getValue(questionDto.section).random) {
+                    filteredAllAnswers.addAll(answersOfOneQuestion.value)
+                    return@forEach
+                }
+
+                val countCorrect = questionDto.countCorrect
+                val filteredAnswersOfOneQuestion: MutableList&lt;AnswerDto&gt; = mutableListOf()
+
+                var isRequiredCorrect = 0
+                answersOfOneQuestion.value
+                    .firstOrNull { it.required }
+                    ?.let { answer -&gt;
+                        filteredAnswersOfOneQuestion.add(answer)
+                        isRequiredCorrect = answer.correct.compareTo(false) // 1 - true, 0 - false
+                    }
+
+                answersOfOneQuestion.value
+                    .filterNot { answer -&gt; answer in filteredAnswersOfOneQuestion }
+                    .shuffled()
+                    .partition { answer -&gt; answer.correct }
+                    .let { (correctAnswers, wrongAnswers) -&gt;
+                        filteredAnswersOfOneQuestion.addAll(
+                            correctAnswers.takeLast(countCorrect - isRequiredCorrect),
+                        )
+                        filteredAnswersOfOneQuestion.addAll(
+                            wrongAnswers.takeLast(max(countAnswer - filteredAnswersOfOneQuestion.size, 0)),
+                        )
+                    }
+
+                filteredAllAnswers.addAll(filteredAnswersOfOneQuestion.shuffled())
+            }
+
+        kafkaClientAdapter.sendAttemptEvent(investId, testId, filteredAllAnswers.map { it.id })
+        if (testType in testTypesForStarted) {
+            runCatching { kafkaClientAdapter.sendTestStartedEvent(investId, testType) }.getOrNull()
+        }
+
+        return@wrap GetQuestionResponse(resultQuestions.map { it.toQuestionBuilder(filteredAllAnswers, questionSection) })
+    }
+
+    private suspend fun getQuestions(testId: UUID): TestQuestionsDto {
+        val testType = testingDaoAdapter.getTestType(testId)
+            ?: throwsBusinessException(BusinessExceptionCode.TEST_NOT_EXISTS)
+
+        if (!nonQualifiedTestCategoryChecker.isNonQualifiedTestCategory(testType)) {
+            throwsBusinessException(BusinessExceptionCode.TEST_NOT_EXISTS)
+        }
+
+        val questions = testingDaoAdapter.getQuestions(testId)
+            .ifEmpty { throwsBusinessException(BusinessExceptionCode.TEST_WITHOUT_QUESTIONS) }
+
+        val answers = testingDaoAdapter.getAnswersByQuestionIds(questions.map(QuestionDto::id))
+
+        return TestQuestionsDto(testType, questions, answers)
+    }
+}
+</content>
+  </GetQuestionsOperation.kt>
+</sourceCode>
