@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sourceCode>
+  <NonQualifiedTestCategoryChecker.kt>
+    <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/logic/service/NonQualifiedTestCategoryChecker.kt</path>
+    <content>package ru.tinkoff.invest.testing.api.logic.service
+
+import ru.tinkoff.invest.testing.api.dto.common.TestConfig
+import ru.tinkoff.invest.testing.api.dto.enums.Category
+import ru.tinkoff.invest.testing.api.dto.enums.TestTypes
+
+class NonQualifiedTestCategoryChecker(
+    private val config: Map&lt;TestTypes, TestConfig&gt;,
+) {
+
+    fun isNonQualifiedTestCategory(testType: TestTypes): Boolean {
+        return config[testType]?.category == Category.NOT_QUALIFIED_TEST
+    }
+}
+</content>
+  </NonQualifiedTestCategoryChecker.kt>
+  <CalculateResultOperation.kt>
+    <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/logic/operation/CalculateResultOperation.kt</path>
+    <content>package ru.tinkoff.invest.testing.api.logic.operation
+
+import ru.tinkoff.invest.kutils.database.types.jooq.TxManager
+import ru.tinkoff.invest.kutils.errors.functions.throwsBusinessException
+import ru.tinkoff.invest.kutils.kapi.extensions.putMdc
+import ru.tinkoff.invest.testing.api.builder.dao.serializeDwhBody
+import ru.tinkoff.invest.testing.api.configuration.CacheManager
+import ru.tinkoff.invest.testing.api.configuration.CopyResultParams
+import ru.tinkoff.invest.testing.api.configuration.SectionParams
+import ru.tinkoff.invest.testing.api.configuration.TotalQuantity
+import ru.tinkoff.invest.testing.api.dto.dao.TestAttrsDto
+import ru.tinkoff.invest.testing.api.dto.dao.sdp.DwhDto
+import ru.tinkoff.invest.testing.api.dto.dao.sdp.ResultDwhDto
+import ru.tinkoff.invest.testing.api.dto.dao.sdp.ResultQuestionsDwhDto
+import ru.tinkoff.invest.testing.api.dto.dao.sdp.enums.SdpOperation
+import ru.tinkoff.invest.testing.api.dto.enums.QuestionSection
+import ru.tinkoff.invest.testing.api.error.exception.BusinessExceptionCode
+import ru.tinkoff.invest.testing.api.helper.BusinessWrapper
+import ru.tinkoff.invest.testing.api.helper.nullableInvalidateCache
+import ru.tinkoff.invest.testing.api.integration.http.AccountClientAdapter
+import ru.tinkoff.invest.testing.api.integration.kafka.KafkaClientAdapter
+import ru.tinkoff.invest.testing.api.integration.testing.TestingDaoAdapter
+import ru.tinkoff.invest.testing.api.logic.service.NonQualifiedTestCategoryChecker
+
+import ru.tinkoff.invest.testing.api.model.CalculateResultRequest
+import ru.tinkoff.invest.testing.api.model.CalculateResultResponse
+import ru.tinkoff.invest.testing.api.model.CalculateResultResponseResult
+import ru.tinkoff.invest.testing.api.model.WrongQuestion
+import ru.tinkoff.invest.testing.notification.event.TestingNotificationEvent.Event.Success
+import ru.tinkoff.kraken.Tags
+import java.time.LocalDateTime
+import java.util.UUID
+
+class CalculateResultOperation(
+    private val testingDaoAdapter: TestingDaoAdapter,
+    private val accountClientAdapter: AccountClientAdapter,
+    private val kafkaClientAdapter: KafkaClientAdapter,
+    private val questionSection: Map&lt;QuestionSection, SectionParams&gt;,
+    private val nonQualifiedTestCategoryChecker: NonQualifiedTestCategoryChecker,
+    private val txManager: TxManager,
+    private val cacheManager: CacheManager,
+    private val copyParams: List&lt;CopyResultParams&gt;,
+    @Tags(TotalQuantity::class) private val totalQuantity: Int,
+) {
+    private val wrapper = BusinessWrapper()
+
+    suspend fun invoke(request: CalculateResultRequest, siebelId: String): CalculateResultResponse = wrapper.wrap {
+        val (_, type, score) = testingDaoAdapter.getTestAttrs(request.testId)
+            ?: throwsBusinessException(BusinessExceptionCode.TEST_NOT_EXISTS)
+
+        if (!nonQualifiedTestCategoryChecker.isNonQualifiedTestCategory(type)) {
+            throwsBusinessException(BusinessExceptionCode.TEST_NOT_EXISTS)
+        }
+
+        val investId = cacheManager.investIdBySiebelCache.makeFunction(
+            accountClientAdapter::getInvestId,
+            nullableInvalidateCache(),
+        ).invoke(siebelId) ?: throwsBusinessException(
+            exceptionCode = BusinessExceptionCode.INVEST_ID_NOT_FOUND,
+            message = &quot;siebelId = $siebelId&quot;,
+        )
+        investId.putMdc(&quot;investId&quot;)
+
+        if (testingDaoAdapter.isTestPassed(investId, request.testId)) {
+            throwsBusinessException(BusinessExceptionCode.TEST_ALREADY_PASSED)
+        }
+
+        val copyToTests = copyParams
+            .filter { it.from == type }
+            .mapNotNull {
+                testingDaoAdapter.getTestAttrs(it.to)
+            }
+
+        val calculableSections = questionSection.filterValues { it.calculation }.map { (key, _) -&gt; key.value }
+        val (calculableQuestions, nonCalculableQuestions) = testingDaoAdapter.getQuestionsByIdsInSections(
+            request.questions.map { it.id },
+            calculableSections,
+        ).partition { dbQuestion -&gt;
+            dbQuestion.countCorrect == request.questions.first { it.id == dbQuestion.id }.answers.size
+        }
+
+        val clientCalculableAnswers = request.questions
+            .filter { question -&gt; question.id in calculableQuestions.map { it.id } }
+            .flatMap { question -&gt; question.answers }
+
+        val wrongQuestions: MutableList&lt;WrongQuestion&gt; =
+            nonCalculableQuestions.map { WrongQuestion(it.id, it.title) }.toMutableList()
+        val clientScore = if (clientCalculableAnswers.isNotEmpty()) {
+            val correctAnswersCountByIds = testingDaoAdapter.getCorrectAnswersCountByIds(clientCalculableAnswers)
+
+            calculableQuestions.fold(0) { clientScore, question -&gt;
+                if (correctAnswersCountByIds.any { correctAnswers -&gt;
+                        question.id == correctAnswers.questionId &amp;&amp; question.countCorrect == correctAnswers.countCorrect
+                    }
+                ) {
+                    clientScore + question.score
+                } else {
+                    wrongQuestions.add(WrongQuestion(question.id, question.title))
+                    clientScore
+                }
+            }
+        } else {
+            0
+        }
+
+        val successfully = clientScore &gt;= score
+
+        val resultId = createResult(investId, request, successfully, clientScore, copyToTests)
+
+        val result = if (successfully) {
+            kafkaClientAdapter.sendTestingNotificationEvent(investId, type, Success.TRUE)
+            copyToTests.forEach { test -&gt;
+                kafkaClientAdapter.sendTestingNotificationEvent(
+                    investId,
+                    test.type,
+                    Success.TRUE,
+                )
+            }
+            null
+        } else {
+            CalculateResultResponseResult(totalQuantity, totalQuantity - wrongQuestions.size, wrongQuestions)
+        }
+
+        kafkaClientAdapter.sendAttemptEvent(investId, request.testId, resultId)
+
+        CalculateResultResponse(successfully, result)
+    }
+
+    private suspend fun createResult(
+        investId: UUID,
+        request: CalculateResultRequest,
+        successfully: Boolean,
+        clientScore: Int,
+        copyToTests: List&lt;TestAttrsDto&gt;,
+    ): UUID = txManager.transactionResult { txContext -&gt;
+        val resultId = UUID.randomUUID()
+        val sdpEvents = mutableListOf&lt;Pair&lt;DwhDto, SdpOperation&gt;&gt;()
+        testingDaoAdapter.createResult(txContext, resultId, investId, request.testId, successfully, clientScore).run {
+            sdpEvents.add(
+                Pair(
+                    ResultDwhDto(resultId, successfully, request.testId, investId, LocalDateTime.now()),
+                    SdpOperation.INSERT,
+                ),
+            )
+        }
+        if (successfully) {
+            copyToTests.forEach { test -&gt;
+                val id = UUID.randomUUID()
+                testingDaoAdapter.createResult(
+                    txContext = txContext,
+                    id = id,
+                    investId = investId,
+                    testId = test.id,
+                    successfully = successfully,
+                    score = test.score,
+                ).run {
+                    sdpEvents.add(
+                        Pair(
+                            ResultDwhDto(id, successfully, test.id, investId, LocalDateTime.now()),
+                            SdpOperation.INSERT,
+                        ),
+                    )
+                }
+            }
+        }
+
+        val requestQuestions = request.questions.flatMap { question -&gt;
+            question.answers.map { answer -&gt;
+                Triple(UUID.randomUUID(), question.id, answer)
+            }
+        }
+
+        val ids = requestQuestions.map { it.first }
+        val questionIds = requestQuestions.map { it.second }
+        val answerIds = requestQuestions.map { it.third }
+
+        testingDaoAdapter.createResultQuestion(txContext, resultId, ids, questionIds, answerIds)
+        sdpEvents.add(Pair(ResultQuestionsDwhDto(resultId, ids, questionIds, answerIds), SdpOperation.INSERT))
+        testingDaoAdapter.insertSdpEvents(txContext, sdpEvents.serializeDwhBody())
+        resultId
+    }
+}
+</content>
+  </CalculateResultOperation.kt>
+  <TestTypes.kt>
+    <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/dto/enums/TestTypes.kt</path>
+    <content>package ru.tinkoff.invest.testing.api.dto.enums
+
+import ru.tinkoff.invest.kutils.errors.functions.throwsValidationException
+import ru.tinkoff.invest.testing.api.error.exception.ValidationExceptionCode
+import ru.tinkoff.invest.testing.api.model.TestType
+import ru.tinkoff.invest.testing.notification.event.TestingNotificationEvent.Event.Type
+import ru.tinkoff.invest.testing.test.started.event.TestingStartedTest.Event.Type as StartedType
+
+enum class TestTypes(
+    val dbValue: String,
+    val apiValue: String,
+    val protoValue: Type,
+    val protoStartedValue: StartedType,
+    val openApiValue: TestType?,
+) {
+    DERIVATIVE(&quot;derivative&quot;, &quot;derivative&quot;, Type.DERIVATIVE, StartedType.DERIVATIVE, TestType.DERIVATIVE),
+    STRUCTURED_BONDS(&quot;structured-bonds&quot;, &quot;structured_bonds&quot;, Type.STRUCTURED_BONDS, StartedType.STRUCTURED_BONDS, TestType.STRUCTURED_BONDS),
+    CLOSED_FUND(&quot;closed-fund&quot;, &quot;closed_fund&quot;, Type.CLOSED_FUND, StartedType.CLOSED_FUND, TestType.CLOSED_FUND),
+    BOND(&quot;bond&quot;, &quot;bond&quot;, Type.BOND, StartedType.BOND, TestType.BOND),
+    STRUCTURED_INCOME_BONDS(&quot;structured-income-bonds&quot;, &quot;structured_income_bonds&quot;, Type.STRUCTURED_INCOME_BONDS, StartedType.STRUCTURED_INCOME_BONDS, TestType.STRUCTURED_INCOME_BONDS),
+    FOREIGN_SHARES(&quot;foreign-shares&quot;, &quot;foreign_shares&quot;, Type.FOREIGN_SHARES, StartedType.FOREIGN_SHARES, TestType.FOREIGN_SHARES),
+    FOREIGN_ETF(&quot;foreign-etf&quot;, &quot;foreign_etf&quot;, Type.FOREIGN_ETF, StartedType.FOREIGN_ETF, TestType.FOREIGN_ETF),
+    FOREIGN_BOND(&quot;foreign-bond&quot;, &quot;foreign_bond&quot;, Type.FOREIGN_BOND, StartedType.FOREIGN_BOND, TestType.FOREIGN_BOND),
+    RUSSIAN_SHARES(&quot;russian-shares&quot;, &quot;russian_shares&quot;, Type.RUSSIAN_SHARES, StartedType.RUSSIAN_SHARES, TestType.RUSSIAN_SHARES),
+    LEVERAGE(&quot;leverage&quot;, &quot;leverage&quot;, Type.LEVERAGE, StartedType.LEVERAGE, TestType.LEVERAGE),
+    OPTION(&quot;option&quot;, &quot;option&quot;, Type.OPTION, StartedType.OPTION, TestType.OPTION),
+    NON_QUOTED_INSTRUMENTS(&quot;non-quoted-instruments&quot;, &quot;non_quoted_instruments&quot;, Type.NON_QUOTED_INSTRUMENTS, StartedType.NON_QUOTED_INSTRUMENTS, TestType.NON_QUOTED_INSTRUMENTS),
+    CONVERTIBLE_BONDS(&quot;convertible-bonds&quot;, &quot;convertible_bonds&quot;, Type.CONVERTIBLE_BONDS, StartedType.CONVERTIBLE_BONDS, TestType.CONVERTIBLE_BONDS),
+    RUSSIAN_BONDS_FOREIGN_LAW(&quot;russian-bonds-foreign-law&quot;, &quot;russian_bonds_foreign_law&quot;, Type.RUSSIAN_BONDS_FOREIGN_LAW, StartedType.RUSSIAN_BONDS_FOREIGN_LAW, TestType.RUSSIAN_BONDS_FOREIGN_LAW),
+    FOREIGN_BONDS_RUSSIAN_LAW(&quot;foreign-bonds-russian-law&quot;, &quot;foreign_bonds_russian_law&quot;, Type.FOREIGN_BONDS_RUSSIAN_LAW, StartedType.FOREIGN_BONDS_RUSSIAN_LAW, TestType.FOREIGN_BONDS_RUSSIAN_LAW),
+    RISK_PROFILE_COMPANY(&quot;risk-profile-company&quot;, &quot;risk_profile_company&quot;, Type.UNRECOGNIZED, StartedType.UNRECOGNIZED, null),
+    ;
+
+    companion object {
+        private val dbMap = values().associateBy(TestTypes::dbValue)
+        private val apiMap = values().associateBy(TestTypes::apiValue)
+
+        fun fromValue(dbValue: String?) = dbMap[dbValue]
+
+        fun fromApiValue(apiValue: String) = apiMap[apiValue] ?: throwsValidationException(
+            ValidationExceptionCode.TEST_TYPE_NOT_SUPPORTED,
+            message = &quot;по $apiValue&quot;,
+        )
+    }
+}
+</content>
+  </TestTypes.kt>
+  <TestConfig.kt>
+    <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/dto/common/TestConfig.kt</path>
+    <content>package ru.tinkoff.invest.testing.api.dto.common
+
+import ru.tinkoff.invest.testing.api.dto.enums.Category
+import ru.tinkoff.invest.testing.api.dto.enums.ClientType
+
+data class TestConfig(
+    val clientType: ClientType,
+    val category: Category,
+)
+</content>
+  </TestConfig.kt>
+  <ClientType.kt>
+    <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/dto/enums/ClientType.kt</path>
+    <content>package ru.tinkoff.invest.testing.api.dto.enums
+
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
+
+@Serializable
+enum class ClientType {
+    @SerialName(&quot;individual&quot;)
+    INDIVIDUAL,
+
+    @SerialName(&quot;company&quot;)
+    COMPANY,
+}
+</content>
+  </ClientType.kt>
+  <Category.kt>
+    <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/dto/enums/Category.kt</path>
+    <content>package ru.tinkoff.invest.testing.api.dto.enums
+
+enum class Category {
+    NOT_QUALIFIED_TEST,
+    RISK_PROFILE_TEST,
+}
+</content>
+  </Category.kt>
+  <ConfigurationModule.kt>
+    <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/configuration/ConfigurationModule.kt</path>
+    <content>package ru.tinkoff.invest.testing.api.configuration
+
+import com.typesafe.config.Config
+import io.github.config4k.extract
+import ru.tinkoff.invest.kutils.database.config.DatabaseConfig
+import ru.tinkoff.invest.kutils.errors.config.ChatAlertsMappingConfig
+import ru.tinkoff.invest.kutils.errors.mapping.ConfigChatAlert
+import ru.tinkoff.invest.kutils.kafka.config.KafkaConfigModule
+import ru.tinkoff.invest.testing.api.dto.common.TestConfig
+import ru.tinkoff.invest.testing.api.dto.enums.Category
+import ru.tinkoff.invest.testing.api.dto.enums.ClientType
+import ru.tinkoff.invest.testing.api.dto.enums.QuestionSection
+import ru.tinkoff.invest.testing.api.dto.enums.TestTypes
+import ru.tinkoff.invest.testing.api.error.exception.BusinessExceptionCode
+
+import ru.tinkoff.kraken.Tags
+import ru.tinkoff.kraken.typesafe.config.TypesafeConfigModule
+
+interface TotalQuantity
+
+interface ConfigurationModule : TypesafeConfigModule.FileWatchBased, KafkaConfigModule {
+    fun configuration(config: Config): ApplicationConfiguration = config.extract(&quot;application&quot;)
+
+    fun testingDbConfiguration(config: ApplicationConfiguration): DatabaseConfig = config.testing
+
+    fun restConfiguration(config: ApplicationConfiguration): RestConfiguration = config.rest
+
+    fun questionSectionConfig(config: ApplicationConfiguration): Map&lt;QuestionSection, SectionParams&gt; =
+        mapOf(
+            QuestionSection.SELF to config.questionSection.self,
+            QuestionSection.LORE to config.questionSection.lore,
+        )
+
+    fun copyResultConfig(config: ApplicationConfiguration): List&lt;CopyResultParams&gt; =
+        config.copyResult.map {
+            CopyResultParams(
+                from = TestTypes.fromApiValue(it.from),
+                to = TestTypes.fromApiValue(it.to),
+            )
+        }
+
+    fun testTypesForStartedConfig(config: ApplicationConfiguration): List&lt;TestTypes&gt; =
+        config.testTypesForStarted.map {
+            requireNotNull(TestTypes.fromValue(it)) { &quot;Для типа теста $it не найдено соответствие в коде&quot; }
+        }
+
+    fun testsConfig(config: ApplicationConfiguration): Map&lt;TestTypes, TestConfig&gt; =
+        config.testsConfig.map { (k, v) -&gt;
+            val type = TestTypes.fromApiValue(k)
+            val testConfig = TestConfig(
+                clientType = ClientType.valueOf(v.clientType.uppercase()),
+                category = Category.valueOf(v.category.uppercase()),
+            )
+            type to testConfig
+        }.toMap()
+
+    fun testDescription(config: ApplicationConfiguration): Map&lt;Category, TestDescriptionConfiguration&gt; =
+        config.testDescription.mapKeys { (k, _) -&gt;
+            Category.valueOf(k.uppercase())
+        }
+
+    fun logicConfig(config: ApplicationConfiguration): LogicConfig {
+        return config.logic
+    }
+
+    fun errorsConfig(config: ApplicationConfiguration) = config.errors
+
+    fun sentryConfig(config: ApplicationConfiguration) = config.sentry
+
+    fun corsConfig(config: ApplicationConfiguration) = config.cors
+
+    fun openApiConfig(config: ApplicationConfiguration) = config.openApi
+
+    fun cacheConfig(config: ApplicationConfiguration) = config.cache
+
+    fun categoryMapping(config: ApplicationConfiguration) = config.categoryMapping
+
+    @Tags(TotalQuantity::class)
+    fun totalQuantity(config: ApplicationConfiguration): Int = config.categoryMapping.category.values.sumOf {
+        it.quantity
+    }
+
+    fun chatAlertsConfig() = run {
+        ChatAlertsMappingConfig(
+            BusinessExceptionCode.values().filter { it.needAlert }.associate {
+                it.stringCode to ConfigChatAlert(BusinessExceptionCode.alertName, it.message, it.stringCode)
+            },
+        )
+    }
+}
+</content>
+  </ConfigurationModule.kt>
+  <GetTestTypeOperation.kt>
+    <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/logic/operation/GetTestTypeOperation.kt</path>
+    <content>package ru.tinkoff.invest.testing.api.logic.operation
+
+import ru.tinkoff.invest.testing.api.builder.http.toGetTestType
+import ru.tinkoff.invest.testing.api.integration.testing.TestingDaoAdapter
+import ru.tinkoff.invest.testing.api.logic.service.NonQualifiedTestCategoryChecker
+import ru.tinkoff.invest.testing.api.model.GetTestTypesItem
+
+class GetTestTypeOperation(
+    private val testingDaoAdapter: TestingDaoAdapter,
+    private val nonQualifiedTestCategoryChecker: NonQualifiedTestCategoryChecker,
+) {
+    suspend fun invoke(ignoreType: Set&lt;String&gt;): List&lt;GetTestTypesItem&gt; {
+        return testingDaoAdapter.getTypes().filter {
+            it.type.apiValue !in ignoreType &amp;&amp;
+                nonQualifiedTestCategoryChecker.isNonQualifiedTestCategory(it.type)
+        }
+            .toGetTestType()
+    }
+}
+</content>
+  </GetTestTypeOperation.kt>
+</sourceCode>

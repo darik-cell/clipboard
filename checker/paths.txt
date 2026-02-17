@@ -1,0 +1,8 @@
+/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/logic/service/NonQualifiedTestCategoryChecker.kt
+/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/logic/operation/CalculateResultOperation.kt
+/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/dto/enums/TestTypes.kt
+/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/dto/common/TestConfig.kt
+/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/dto/enums/ClientType.kt
+/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/dto/enums/Category.kt
+/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/configuration/ConfigurationModule.kt
+/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/logic/operation/GetTestTypeOperation.kt

@@ -1,0 +1,7 @@
+<prompt>
+    <question>
+        /home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/logic/operation/CalculateResultOperation.kt
+        тут есть проверка isNonQualifiedTestCategory, для нее создан отдельный класс, этот метод используется еще в
+        других местах, мне кажется это излишне как ты считаешь? может можно как-то сделать extension для TestTypes?
+    </question>
+</prompt>
