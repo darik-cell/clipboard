@@ -1,0 +1,182 @@
+<messages>
+    <m1>
+        ```sql
+        UPDATE testing.result r
+        SET successfully = false
+        FROM testing.test t
+        WHERE r.invest_id = :investId::uuid
+        AND r.test_id = t.id
+        AND t.type = :testType::testing.test_type
+        AND r.successfully = true
+        RETURNING r.id as id, r.successfully as successfully, r.test_id as test_id,
+        r.invest_id as invest_id, r.inserted as inserted
+        ```
+    </m1>
+    <m2>
+        a.alenushka@nblx-std-cf85cd:~/work/invest-testing/admin$ ./gradlew :generateProto --info
+        Initialized native services in: /home/a.alenushka/.gradle/native
+        Initialized jansi services in: /home/a.alenushka/.gradle/native
+        Received JVM installation metadata from '/home/a.alenushka/.sdkman/candidates/java/21.0.9-amzn': {JAVA_HOME=/home/a.alenushka/.sdkman/candidates/java/21.0.9-amzn, JAVA_VERSION=21.0.9, JAVA_VENDOR=Amazon.com Inc., RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=21.0.9+10-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=21.0.9+10-LTS, VM_VENDOR=Amazon.com Inc., OS_ARCH=amd64}
+        The client will now receive all logging from the daemon (pid: 796792). The daemon log file: /home/a.alenushka/.gradle/daemon/8.0/daemon-796792.out.log
+        Starting 4th build in daemon [uptime: 22 mins 40.79 secs, performance: 100%, GC rate: 0.00/s, heap usage: 2% of 512 MiB, non-heap usage: 66% of 256 MiB]
+        Using 12 worker leases.
+        Now considering [/home/a.alenushka/work/invest-testing/admin] as hierarchies to watch
+        Watching the file system is configured to be enabled if available
+        File system watching is active
+        Starting Build
+        The configuration classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        Settings evaluated using settings file '/home/a.alenushka/work/invest-testing/admin/settings.gradle.kts'.
+        Using local directory build cache for the root build (location = /home/a.alenushka/.gradle/caches/build-cache-1, removeUnusedEntriesAfter = 7 days).
+        Projects loaded. Root project using build file '/home/a.alenushka/work/invest-testing/admin/build.gradle.kts'.
+        Included projects: [root project 'invest-testing-admin']
+
+        > Configure project :
+        Evaluating root project 'invest-testing-admin' using build file '/home/a.alenushka/work/invest-testing/admin/build.gradle.kts'.
+        The configuration detachedConfiguration1 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration1 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration detachedConfiguration1 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration1 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration detachedConfiguration2 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration2 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration detachedConfiguration2 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration2 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration detachedConfiguration3 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration3 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration detachedConfiguration3 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration3 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration detachedConfiguration4 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration4 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration detachedConfiguration4 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration4 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration detachedConfiguration5 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration5 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration detachedConfiguration5 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration5 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration detachedConfiguration6 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration6 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration detachedConfiguration6 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration6 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration detachedConfiguration7 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration7 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration detachedConfiguration7 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration7 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration detachedConfiguration8 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration8 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration detachedConfiguration8 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration8 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration :classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration :classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration :classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration :classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        Using Kotlin Gradle Plugin gradle80 variant
+        kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
+        kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
+        Applying plugin 'org.barfuin.gradle.jacocolog'
+        org.barfuin.gradle.jacocolog[forAllJacocoEnabledTestTasks]: Adding test task ':test' to known test task list because it was configured.
+        org.barfuin.gradle.jacocolog[forAllReportTasks]: Adding report task ':jacocoTestReport' to known report task list.
+        org.barfuin.gradle.jacocolog[configureAggregatedReportTask]: Configuring ':jacocoAggregatedReport'
+        org.barfuin.gradle.jacocolog[configureAggregatedReportTask]: Adding execution data from task ':test'
+        Build cache key for Kotlin DSL accessors for root project 'invest-testing-admin' is af15293e11fd5bf357d2e90c3d830a8c
+        Skipping Kotlin DSL accessors for root project 'invest-testing-admin' as it is up-to-date.
+        ------------------------------------------------------------------------
+        Detecting the operating system and CPU architecture
+        ------------------------------------------------------------------------
+        os.detected.name=linux
+        os.detected.arch=x86_64
+        os.detected.bitness=64
+        os.detected.version=6.11
+        os.detected.version.major=6
+        os.detected.version.minor=11
+        os.detected.release=ubuntu
+        os.detected.release.version=24.04
+        os.detected.release.like.ubuntu=true
+        os.detected.release.like.debian=true
+        os.detected.classifier=linux-x86_64
+        org.barfuin.gradle.jacocolog[:] - afterEvaluate(): Adding directories from report task ':jacocoTestReport'
+        All projects evaluated.
+        Task path ':generateProto' matched project ':'
+        Task name matched 'generateProto'
+        Selected primary task 'generateProto' from project :
+        The configuration :allureCopyCategoriesElements is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration :allureRawResultElements is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration :allureWorkaroundGradleBug is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        Starting process 'command '/usr/lib/jvm/openjdk-21/bin/java''. Working directory: /home/a.alenushka/.gradle/.tmp/tmp-jvm11449223715791896854probe Command: /usr/lib/jvm/openjdk-21/bin/java -cp . JavaProbe
+        Failed to get metadata from JVM installation at '/usr/lib/jvm/openjdk-21'.
+        org.gradle.process.internal.ExecException: A problem occurred starting process 'command '/usr/lib/jvm/openjdk-21/bin/java''
+        at org.gradle.process.internal.DefaultExecHandle.execExceptionFor(DefaultExecHandle.java:241)
+        at org.gradle.process.internal.DefaultExecHandle.setEndStateInfo(DefaultExecHandle.java:218)
+        at org.gradle.process.internal.DefaultExecHandle.failed(DefaultExecHandle.java:370)
+        at org.gradle.process.internal.ExecHandleRunner.run(ExecHandleRunner.java:87)
+        at org.gradle.internal.operations.CurrentBuildOperationPreservingRunnable.run(CurrentBuildOperationPreservingRunnable.java:42)
+        at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+        at org.gradle.internal.concurrent.ManagedExecutorImpl$1.run(ManagedExecutorImpl.java:49)
+        at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
+        at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
+        at java.base/java.lang.Thread.run(Thread.java:1583)
+        Caused by: net.rubygrapefruit.platform.NativeException: Could not start '/usr/lib/jvm/openjdk-21/bin/java'
+        at net.rubygrapefruit.platform.internal.DefaultProcessLauncher.start(DefaultProcessLauncher.java:27)
+        at net.rubygrapefruit.platform.internal.WrapperProcessLauncher.start(WrapperProcessLauncher.java:36)
+        at org.gradle.process.internal.ExecHandleRunner.startProcess(ExecHandleRunner.java:98)
+        at org.gradle.process.internal.ExecHandleRunner.run(ExecHandleRunner.java:71)
+        ... 6 more
+        Caused by: java.io.IOException: Cannot run program "/usr/lib/jvm/openjdk-21/bin/java" (in directory "/home/a.alenushka/.gradle/.tmp/tmp-jvm11449223715791896854probe"): error=2, Нет такого файла или каталога
+        at java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1170)
+        at java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1089)
+        at net.rubygrapefruit.platform.internal.DefaultProcessLauncher.start(DefaultProcessLauncher.java:25)
+        ... 9 more
+        Caused by: java.io.IOException: error=2, Нет такого файла или каталога
+        at java.base/java.lang.ProcessImpl.forkAndExec(Native Method)
+        at java.base/java.lang.ProcessImpl.<init>(ProcessImpl.java:295)
+        at java.base/java.lang.ProcessImpl.start(ProcessImpl.java:225)
+        at java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1126)
+        ... 11 more
+        Invalid Java installation found at '/usr/lib/jvm/openjdk-21' (Common Linux Locations). It will be re-checked in the next build. This might have performance impact if it keeps failing. Run the 'javaToolchains' task for more details.
+        The configuration :coverageDataElementsForTest is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration :kotlinKaptWorkerDependencies is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration :kotlinKaptWorkerDependencies is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration :mainSourceElements is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration :protobuf is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration :protobuf is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration :protobufToolsLocator_protoc is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration :protobufToolsLocator_protoc is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration :testProtobuf is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration :testProtobuf is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration :testResultsElementsForTest is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        Resource missing. [HTTP GET: https://artifactory.tcsbank.ru/artifactory/maven-all/io/netty/netty-transport-native-kqueue/osx-x86_64/netty-transport-native-kqueue-osx-x86_64.pom]
+        Resource missing. [HTTP GET: https://artifactory.tcsbank.ru/artifactory/maven-releases-hosted/invest-origination/io/netty/netty-transport-native-kqueue/osx-x86_64/netty-transport-native-kqueue-osx-x86_64.pom]
+        Resource missing. [HTTP GET: https://artifactory.tcsbank.ru/artifactory/maven-all/io/netty/netty-transport-native-epoll/linux-x86_64/netty-transport-native-epoll-linux-x86_64.pom]
+        Resource missing. [HTTP GET: https://artifactory.tcsbank.ru/artifactory/maven-releases-hosted/invest-origination/io/netty/netty-transport-native-epoll/linux-x86_64/netty-transport-native-epoll-linux-x86_64.pom]
+        The configuration :protobuf is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
+        The configuration :protobuf is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        Tasks to be executed: [task ':extractIncludeProto', task ':extractProto', task ':generateProto']
+        Tasks that were excluded: []
+        Resolve mutations for :extractIncludeProto (Thread[#834,Execution worker,5,main]) started.
+        :extractIncludeProto (Thread[#838,Execution worker Thread 5,5,main]) started.
+
+        > Task :extractIncludeProto UP-TO-DATE
+        Caching disabled for task ':extractIncludeProto' because:
+        Caching has not been enabled for the task
+        Skipping task ':extractIncludeProto' as it is up-to-date.
+        Resolve mutations for :extractProto (Thread[#838,Execution worker Thread 5,5,main]) started.
+        :extractProto (Thread[#838,Execution worker Thread 5,5,main]) started.
+
+        > Task :extractProto UP-TO-DATE
+        Caching disabled for task ':extractProto' because:
+        Caching has not been enabled for the task
+        Skipping task ':extractProto' as it is up-to-date.
+        Resolve mutations for :generateProto (Thread[#838,Execution worker Thread 5,5,main]) started.
+        :generateProto (Thread[#838,Execution worker Thread 5,5,main]) started.
+
+        > Task :generateProto UP-TO-DATE
+        Custom actions are attached to task ':generateProto'.
+        Build cache key for task ':generateProto' is a9afb7b44cb3d6da5d2bf32d5ac5324b
+        Skipping task ':generateProto' as it is up-to-date.
+
+        BUILD SUCCESSFUL in 1s
+        3 actionable tasks: 3 up-to-date
+        a.alenushka@nblx-std-cf85cd:~/work/invest-testing/admin$
+    </m2>
+</messages>
