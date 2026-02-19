@@ -1,0 +1,3638 @@
+<prompt>
+    <task>в calculateResult написана спецификация как надо, я сейчас на шаге 7</task>
+    <before>
+        <sourceCode>
+            <calculateResultAlgorithm.adoc>
+                <path>/home/a.alenushka/work/invest-testing/common/service-docs/docs/modules/invest-testing/pages/invest-testing-api/commonSpec/calculateResultAlgorithm.adoc</path>
+                <content>. [[testId]] НАЙТИ запись в *test*, ГДЕ *id = testId* из входных параметров И *activated = true* И *deleted = false*
+                    .. ЕСЛИ запись *не найдена*, ТОГДА отправить *алерт* и завершить обработку с ошибкой xref:#TestNotFound[TestNotFound]
+                    .. Получить *category* из xref:#config[Списка тестов], ГДЕ *type = type* из test
+                    ... ЕСЛИ запись не найдена ИЛИ *category != &apos;not_qualified_test&apos;*, ТОГДА отправить *алерт* и завершить обработку с ошибкой xref:#TestNotFound[TestNotFound]
+
+                    . [[questions_count]] Получить общее кол-во вопросов (*total*) в тесте: Рассчитать значение *total* на основании xref:#config[настроек категорий вопросов]: *total = SUM(quantity)*
+
+                    . [[investId]] НАЙТИ в кэше xref:invest-testing:invest-testing-api/cache/investIdBySiebel.adoc[investIdBySiebel] запись, ГДЕ *siebelId = x-tcs-siebel-id* из xref:#contractDescription[вх. параметров]
+                    .. ЕСЛИ получена ошибка *InvestIdNotFound*, ТОГДА завершить обработку с ошибкой xref:#InvestIdNotFound[InvestIdNotFound]
+
+                    . Проверка на уже пройденный тест:
+                    .. НАЙТИ запись в таблице *result*, ГДЕ *invest_id = investId* из xref:#investId[*investId*] И *test_id = testId* из xref:#contractDescription[вх. параметров] И *successfully = true*
+                    ... ЕСЛИ запись *найдена*, ТОГДА завершить обработку с ошибкой xref:#AlreadyPassed[AlreadyPassed]
+
+                    . [[testForCopy]] Получить  xref:#config[Типы тестов для копирования результатов тестирования]:
+                    ЕСЛИ *type* из записи в xref:#testId[найденном тесте] *IN typeFrom*, ТОГДА НАЙТИ запись в таблице *test*, ГДЕ *type IN typeTo* И *activated = true* И *deleted = false*
+
+                    . [[questions]] Выбрать вопросы для расчета *score*:
+                    .. НАЙТИ записи в таблице *question*, ГДЕ *id IN questions[].id* из xref:#contractDescription[вх. параметров] И *calculation = true* из xref:#config[Блоки теста] И *count_correct = COUNT(questions[].id.answers[])*
+                    +
+                    WARNING: К расчету score отбираются вопросы, которые требуют хотя бы один правильный ответ и для них передано во входных параметрах ожидаемое количество ответов
+                    +
+
+                    . Выбрать правильные ответы для вопросов для расчета *score*
+                    .. [[answers]]НАЙТИ в таблице *answer* записи, ГДЕ *id IN questions[].id.answers[]* из xref:#questions[из отобранных для расчета score вопросов] И *correct = true*
+
+                    . [[calculatedResult]] На основании каждого вопроса из xref:#questions[отобранных для расчета score] рассчитать итоговый результат теста:
+                    .. ЕСЛИ *кол-во полученных xref:#answers[правильных ответов] = count_correct* вопроса из xref:#questions[отобранных], ТОГДА итоговый *score += score* вопроса
+                    +
+                    WARNING: тест будет считаться пройденным если итоговый рассчитанный score &gt;= score из xref:#testId[теста]. При этом теоретически можно набрать необходимый score одним вопросом.
+                    +
+                    .. [[wrong_questions]] ИНАЧЕ добавить *id* и *title* неправильно отвеченного вопроса в xref:#response[выходной объект]
+
+                    . [[result]] Создать запись в таблице *result*
+                    +
+                    .[red]#Маппинг#
+                    [%collapsible]
+                    ====
+                    [cols=&apos;,9a&apos;]
+                    |===
+                    |Поле          |Как заполнять
+
+                    |id
+                    |Сгенерировать uuid
+
+                    |invest_id
+                    |xref:#investId[investId]
+
+                    |successfully
+                    a|* true, если сумма score из xref:#calculatedResult[рассчитанного score] &gt;= score из xref:#testId[найденного теста]
+                    * false, иначе
+                    |test_id
+                    |testId из входных параметров
+
+                    |score
+                    |xref:#calculatedResult[score]
+                    |===
+                    ====
+                    +
+                    .. [[calculateResult10]]ЕСЛИ *найден* xref:#config[тип теста для копирования результата] И *successfully=true*, ТОГДА для каждой найденной записи сделать вставку в *result*
+                    +
+                    .[red]#Маппинг#
+                    [%collapsible]
+                    ====
+                    [cols=&apos;,9a&apos;]
+                    |===
+                    |Поле          |Как заполнять
+
+                    |id
+                    |Сгенерировать uuid
+
+                    |invest_id
+                    |xref:#investId[investId]
+
+                    |successfully
+                    a|* true, если сумма score из xref:#calculatedResult[рассчитанного score] &gt;= score из xref:#testId[найденного теста]
+                    * false, иначе
+
+                    |test_id
+                    |testId из xref:#config[найденного типа теста для копирования результата]
+
+                    |score
+                    |xref:#calculatedResult[score]
+                    |===
+                    ====
+                    +
+
+                    . [[calculateResult11]]Создать запись в таблицу *result_question* для каждого элемента из массивов *questions* и *answers* из xref:#contractDescription[вх. параметров]
+                    +
+                    .[red]#Маппинг#
+                    [%collapsible]
+                    ====
+                    [cols=&apos;,9a&apos;]
+                    |===
+                    |Поле           |Как заполнять
+
+                    |id
+                    |Сгенерировать uuid
+
+                    |result_id
+                    |id записи из xref:#result[таблицы result]
+
+                    |question_id
+                    |questions.id из xref:#contractDescription[вх. параметров]
+
+                    |answer_id
+                    |Элемент массива questions.answers.id
+                    |===
+                    ====
+                    +
+
+                    . Для каждой записи из шагов xref:#calculateResult10[10] и xref:#calculateResult11[11] батчем сохранить записи в таблицу в *sdp_event*.
+                    +
+                    .[red]#Маппинг для result#
+                    [%collapsible]
+                    ====
+                    |===
+                    |Поле                      |Как заполнять
+
+                    |body              |json вставленной result согласно дата-контракту
+                    |sdpOperation      |I - insert
+                    |type              |result
+                    |status            |wait
+                    |===
+                    ====
+
+                    +
+                    .[red]#Маппинг для result_question#
+                    [%collapsible]
+                    ====
+                    [cols=&apos;,9a&apos;]
+                    |===
+                    |Поле                      |Как заполнять
+
+                    |body              |
+                    !===
+                    !json поле         !значение
+
+                    !resultId          !id вставленной записи result
+                    !ids               !Список id вставленных result_question
+                    !questionIds       !Список id question
+                    !answerIds         !Список id answer
+                    !===
+                    |sdpOperation      |I - insert
+                    |type              |result
+                    |status            |wait
+                    |===
+                    ====
+
+                    . ЕСЛИ сумма xref:#calculatedResult[score] &gt;= *score* из xref:#testId[найденного теста], ТОГДА
+                    .. Сформировать событие
+                    .. Преобразовать в соответствии с ({url}{page-component-version}{proto}/testing-notification.proto[proto])
+                    .. ЕСЛИ *notificationRawStpProducer == true*, ТОГДА положить в топик https://wiki.tcsbank.ru/display/StreamingPlatform/origination.testing.notification.raw[origination.testing.notification.raw] с ключом xref:#investId[*investId*]
+                    .. ЕСЛИ *notificationRawKaasProducer == true*, ТОГДА положить в топик https://devplatform.tcsbank.ru/tenants/invest-testing/kafka/topics/view/346881[invest-testing.testing.notification.raw] с ключом xref:#investId[*investId*]
+                    +
+                    .[red]#Маппинг#
+                    [%collapsible]
+                    ====
+                    [cols=&apos;,9a&apos;]
+                    |===
+                    |Поле          |Как заполнять
+
+                    | id           |Сгенерировать uuid
+                    | created_at   |now()
+                    | invest_id    |xref:#investId[investId]
+                    | type         |
+                    !===
+                    !type в xref:#testId[найденном тесте] !type в событии
+
+                    !derivative                   !DERIVATIVE
+                    !structured_bonds             !STRUCTURED_BONDS
+                    !closed_fund                  !CLOSED_FUND
+                    !bond                         !BOND
+                    !structured_income_bonds      !STRUCTURED_INCOME_BONDS
+                    !russian_shares               !RUSSIAN_SHARES
+                    !leverage                     !LEVERAGE
+                    !foreign_shares               !FOREIGN_SHARES
+                    !foreign_etf                  !FOREIGN_ETF
+                    !foreign_bond                 !FOREIGN_BOND
+                    !non_quoted_instruments       !NON_QUOTED_INSTRUMENTS
+                    !convertible_bonds            !CONVERTIBLE_BONDS
+                    !russian_bonds_foreign_law    !RUSSIAN_BONDS_FOREIGN_LAW
+                    !foreign_bonds_russian_law    !FOREIGN_BONDS_RUSSIAN_LAW
+                    !money_secured_bonds          !MONEY_SECURED_BONDS
+                    !===
+                    |successfully   |true
+                    |===
+                    ====
+                    +
+                    .. ЕСЛИ *найдены* записи в xref:#config[типах теста для копирования результата], ТОГДА *для каждой* найденной записи:
+                    ... Сформировать еще одно событие
+                    ... Преобразовать в соответствии с ({url}{page-component-version}{proto}/testing-notification.proto[proto])
+                    ... ЕСЛИ *notificationRawStpProducer == true*, ТОГДА положить в топик https://wiki.tcsbank.ru/display/StreamingPlatform/origination.testing.notification.raw[origination.testing.notification.raw] с ключом xref:#investId[*investId*]
+                    ... ЕСЛИ *notificationRawKaasProducer == true*, ТОГДА положить в топик https://devplatform.tcsbank.ru/tenants/invest-testing/kafka/topics/view/346881[invest-testing.testing.notification.raw] с ключом xref:#investId[*investId*]
+                    . Сформировать событие в соответствии с ({url}{page-component-version}{proto}/testing-attempt.proto[proto])
+                    .. ЕСЛИ *attemptQueueStpProducer == true*, ТОГДА положить в топик https://wiki.tcsbank.ru/display/StreamingPlatform/origination.testing.attempt.queue[origination.testing.attempt.queue] с ключом xref:#investId[*investId*]
+                    .. ЕСЛИ *attemptQueueKaasProducer == true*, ТОГДА положить в топик https://devplatform.tcsbank.ru/tenants/invest-testing/kafka/topics/view/346882[invest-testing.testing.attempt.queue] с ключом xref:#investId[*investId*]
+                    +
+                    .[red]#Маппинг#
+                    [%collapsible]
+                    ====
+                    [cols=&apos;,,9a&apos;]
+                    |===
+                    2+|Поле         |Как заполнять
+
+                    2+|id           |Сгенерировать UUID
+                    2+|created_at   |now()
+                    2+|invest_id    |xref:#investId[investId]
+                    2+|test_id      |testId из xref:#contractDescription[вх. параметров]
+                    2+|result       |Все отобранные вопросы для всех ответов
+                    | |id           |id записи из xref:#result[result]
+
+                    |===
+                    ====
+                    +
+
+                    . [[response]]Сформировать ответ
+                    +
+                    .[red]#Маппинг#
+                    [%collapsible]
+                    ====
+                    [cols=&apos;,,,9a&apos;]
+                    |===
+                    3+|Поле     |Как заполнять
+
+                    3+|successfully
+                    a|* ЕСЛИ xref:#calculatedResult[score] &gt;= score из xref:#testId[найденного теста], ТОГДА true
+                    * ИНАЧЕ false
+
+                    3+|result       |ЕСЛИ successfully = true, ТОГДА не передавать объект
+                    | 2+|total      |xref:#questions_count[Общее кол-во вопросов] в тесте
+                    | 2+|correct    |xref:#questions_count[Общее кол-во вопросов] в тесте* - *кол-во элементов в wrongQuestions[]
+                    | 2+|wrongQuestions[]   |из xref:#wrong_questions[неверно отвеченного вопроса]
+                    | | | id                |id
+                    | | | title             |title
+                    |===
+                    ====
+
+                    . Завершить обработку</content>
+            </calculateResultAlgorithm.adoc>
+            <calculateResult.adoc>
+                <path>/home/a.alenushka/work/invest-testing/common/service-docs/docs/modules/invest-testing/pages/invest-testing-api/calculateResult.adoc</path>
+                <content>= (calculateResult) Метод подсчета результата тестирования
+
+                    == Описание
+
+                    На основе входных данных принимает решение пройден или нет тест клиента. При неудачном прохождении теста возвращает статистику с общим количеством вопросов в тесте и списком неправильно отвеченных вопросов
+
+                    == История изменений
+
+                    .Раскрыть
+                    [%collapsible]
+                    ====
+                    |===
+                    |Дата изменения| Техническое описание изменений |Задача в JIRA
+
+                    |17.01.2023
+                    |Документ создан
+                    |https://jira.tcsbank.ru/browse/KINV-1662[KINV-1662]
+
+                    |04.07.2021
+                    |Расчет результата по весу вопроса
+                    |https://jira.tcsbank.ru/browse/KINV-1724[KINV-1724]
+
+                    |29.07.2021
+                    |Корректировка описания ошибок
+                    |https://jira.tcsbank.ru/browse/KINV-1959[KINV-1959]
+
+                    |30.08.2021
+                    |Расширен список тестов
+                    |https://jira.tcsbank.ru/browse/KINV-2260[KINV-2260]
+
+                    |29.09.2021
+                    |Добавлены кэши
+                    |https://jira.tcsbank.ru/browse/KINV-2489[KINV-2489]
+
+                    |29.09.2021
+                    |Отливать событие о завершении попытки прохождении теста
+                    |https://jira.tcsbank.ru/browse/KINV-2466[KINV-2466]
+
+                    |18.10.2021
+                    |Проверка того, что тест пройден, перед записью результата
+                    |https://jira.tcsbank.ru/browse/KINV-2634[KINV-2634]
+
+                    |03.12.2021
+                    |Возвращать ошибку для поверенного
+                    |https://jira.tcsbank.ru/browse/KINV-3081[KINV-3081]
+
+                    |19.01.2022
+                    |Добавлена обработка нового поля activated в таблице test
+                    |https://jira.tcsbank.ru/browse/KINV-3449[KINV-3449]
+
+                    |25.01.2022
+                    |Добавлено автоматическое проставление результатов тестирования при прохождении теста derivative или option
+                    |https://jira.tcsbank.ru/browse/KINV-3448[KINV-3448]
+
+                    |07.02.2022
+                    |Добавлен новый атрибут в схему proto
+                    |https://jira.tcsbank.ru/browse/KINV-3942[KINV-3942]
+
+                    |30.01.2023
+                    |Добавлена статистика прохождения теста в выходном объекте
+                    |https://jira.tcsbank.ru/browse/KINV-7329[KINV-7329]
+
+                    |07.05.2024
+                    |Проверка теста по категории
+                    |https://jira.tcsbank.ru/browse/KINV-14577[KINV-14577]
+
+                    |29.01.2024
+                    |Отправка событий в SDP
+                    |https://jira3.tcsbank.ru/browse/INVACC-5025[INVACC-5025]
+
+                    |08.07.2025
+                    |Переезд invest-testing на KaaS
+                    |https://jira3.tcsbank.ru/browse/ISELF-1414[ISELF-1414]
+
+                    |===
+                    ====
+
+                    == Описание контракта
+
+                    NOTE: [[contractDescription]] xref:ROOT:openapi/invest-testing-api-v1.openapi.adoc[POST /test/result]
+
+                    == [[config]]Настройки
+
+                    include::../common/configs.adoc[tag=testTypes]
+                    include::../common/configs.adoc[tag=categoryQuestions]
+                    include::../common/configs.adoc[tag=testBlocks]
+                    include::../common/configs.adoc[tag=testTypesForCopy]
+
+                    == Алгоритм работы
+
+                    . Проверка на попытку пройти тест за &quot;босса&quot;:
+                    ЕСЛИ передан не пустой *x-tcs-principal-siebel-id*, завершить обработку с ошибкой *422 ConfidantForbidden*
+                    +
+                    include::commonSpec/calculateResultAlgorithm.adoc[]
+
+                    == Описание ошибок
+
+                    [.stripes-even,cols=&apos;,,9,9,^&apos;]
+                    |===
+                    |HTTP Status Code |errorCode |errorMessage |Описание |Alert
+
+                    include::../common/errors_description.adoc[tags=400ValidationError;ConfidantForbidden;AlreadyPassed;TestNotFound;InternalError;InvestIdNotFound]
+
+                    |===
+
+                    == Описание alert
+
+                    [.stripes-even,cols=&apos;,9,9,^&apos;]
+                    |===
+                    |errorCode |errorMessage |Описание |Alert
+
+                    include::../common/errors_description.adoc[tags=QuestionsSettingsError]
+
+                    |===
+
+                </content>
+            </calculateResult.adoc>
+            <application.conf>
+                <path>/home/a.alenushka/work/invest-testing/api/k8s/qa/config/application.conf</path>
+                <content>application {
+                    testing {
+                    driverClassName = &quot;org.postgresql.Driver&quot;
+                    url = &quot;jdbc:postgresql://invest-testing-invest-testing-1.ds.pg-test.tcsbank.ru:5432/invest_testing?ApplicationName=invest-testing-api&quot;
+                    username = ${TESTING_API_USER}
+                    password = ${TESTING_API_PASSWORD}
+                    connectionTimeout = 10000
+                    maxPoolSize = 1
+                    }
+
+                    rest {
+                    account {
+                    url = &quot;http://invest-qa.tinkoff.ru/account/public/v1&quot;
+                    retryPolicy {
+                    delaySeconds = 1
+                    retryCount = 3
+                    }
+                    }
+                    confidantPoa {
+                    url = &quot;https://invest-qa.tinkoff.ru/confidant/poa/v1&quot;
+                    retryPolicy {
+                    delaySeconds = 1
+                    retryCount = 3
+                    }
+                    token = ${JWT_TOKEN}
+                    }
+                    riskProfileProcessor {
+                    url = &quot;https://invest-qa.tinkoff.ru/risk-profile/v1&quot;
+                    retryPolicy {
+                    delaySeconds = 1
+                    retryCount = 3
+                    }
+                    token = ${JWT_TOKEN}
+                    }
+                    }
+
+                    cache {
+                    investIdBySiebel = &quot;maximumSize=1000,expireAfterWrite=10m,recordStats&quot;
+                    questionsByTestIdCache = &quot;maximumSize=10,expireAfterWrite=1m,recordStats,softValues&quot;
+                    investTypeByInvestIdCache = &quot;maximumSize=1000,expireAfterWrite=1m,recordStats&quot;
+                    }
+
+                    questionSection {
+                    self {
+                    random = false
+                    position = 2
+                    title = &quot;Самооценка&quot;
+                    calculation = false
+                    }
+                    lore {
+                    random = true
+                    position = 1
+                    title = &quot;Знания&quot;
+                    calculation = true
+                    }
+                    riskProfile {
+                    random = false
+                    position = 3
+                    title = &quot;Риск-профиль&quot;
+                    calculation = true
+                    }
+                    }
+
+                    logic {
+                    countAnswer = 4
+                    allowType = [
+                    {
+                    platform = &quot;android&quot;
+                    appVersion = &quot;5.4.0&quot;
+                    type = &quot;option&quot;
+                    },
+                    {
+                    platform = &quot;android&quot;
+                    appVersion = &quot;5.4.0&quot;
+                    # russian_bonds_foreign_law это money_secured_bonds https://jira3.tcsbank.ru/browse/ISELF-1448
+                    type = &quot;russian_bonds_foreign_law&quot;
+                    }
+                    ]
+                    }
+
+                    testDescription {
+                    not_qualified_test {
+                    label = &quot;Чтобы торговать высокодоходными бумагами, нужно пройти тест. Это требование законодательства&quot;
+                    description = &quot;Ответьте на несколько вопросов в 2 блоках: «Знания» и «Самооценка»&quot;
+                    remark = &quot;Вопросы блока «Самооценка» не влияют на общий результат&quot;
+                    }
+                    risk_profile_test {
+                    label = &quot;&quot;
+                    description = &quot;Тест для присвоения инвестиционного профиля компании. Нужен для того, чтобы аналитики могли направлять вам, согласно ваших результатов рекомендации по покупке бумаг.&quot;
+                    remark = &quot;&quot;
+                    }
+                    }
+
+                    testsConfig {
+                    derivative {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    structured_bonds {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    closed_fund {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    bond {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    structured_income_bonds {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    foreign_shares {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    foreign_etf {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    foreign_bond {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    russian_shares {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    leverage {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    option {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    non_quoted_instruments {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    convertible_bonds {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    # russian_bonds_foreign_law это money_secured_bonds https://jira3.tcsbank.ru/browse/ISELF-1448
+                    russian_bonds_foreign_law {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    foreign_bonds_russian_law {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    risk_profile_company {
+                    clientType = &quot;company&quot;
+                    category = &quot;risk_profile_test&quot;
+                    }
+                    }
+
+                    copyResult: [{
+                    from = &quot;option&quot;
+                    to = &quot;derivative&quot;
+                    }, {
+                    from = &quot;derivative&quot;
+                    to = &quot;option&quot;
+                    }]
+
+                    testTypesForStarted: [&quot;option&quot;, &quot;derivative&quot;]
+
+                    errors {
+                    mappings {
+                    &quot;TestAlreadyPassed&quot; {
+                    code = &quot;AlreadyPassed&quot;
+                    message = &quot;Тест уже успешно пройден&quot;
+                    }
+                    &quot;TestNotExists&quot; {
+                    code = &quot;TestNotFound&quot;
+                    message = &quot;Тест не найден&quot;
+                    }
+                    &quot;TestWithoutQuestions&quot; {
+                    code = &quot;TestHasNoQuestions&quot;
+                    message = &quot;Тест не содержит вопросов&quot;
+                    }
+                    &quot;InvestIdNotFound&quot; {
+                    code = &quot;InvestIdNotFound&quot;
+                    message = &quot;Сервис временно недоступен&quot;
+                    }
+                    &quot;ConfidantForbidden&quot; {
+                    code = &quot;ConfidantForbidden&quot;
+                    message = &quot;Недостаточно доступов для данной операции. У вас не хватает прав, выданных доверителем, или данная операция невозможна&quot;
+                    }
+                    &quot;LoreQuestionsNotFound&quot; {
+                    code = &quot;LoreQuestionsNotFound&quot;
+                    message = &quot;Сервис временно недоступен&quot;
+                    }
+                    &quot;TestNotFound&quot; {
+                    code = &quot;TestNotFound&quot;
+                    message = &quot;Сервис временно недоступен&quot;
+                    }
+                    &quot;AlreadyPassed&quot; {
+                    code = &quot;AlreadyPassed&quot;
+                    message = &quot;Клиент уже успешно прошёл тест&quot;
+                    }
+                    }
+                    }
+
+                    sentry {
+                    dsn = ${ERROR_HUB_DSN}
+                    environment = QA
+                    release = &quot;testing.api.&quot;${RELEASE_BRANCH}
+                    serviceName = &quot;invest-testing-api&quot;
+                    }
+
+                    cors {
+                    allowedMethods = [&quot;POST&quot;, &quot;GET&quot;, &quot;OPTIONS&quot;]
+                    allowedHeaders = [&quot;X-APP-NAME&quot;, &quot;X-APP-VERSION&quot;, &quot;X-PLATFORM&quot;, &quot;X-TCS-SIEBEL-ID&quot;, &quot;X-DEVICE-ID&quot;, &quot;X-B3-TRACEID&quot;, &quot;X-B3-SPANID&quot;, &quot;X-TCS-PRINCIPAL-SIEBEL-ID&quot;]
+                    allowedHosts = [
+                    &quot;https://www-f1.tinkoff.ru&quot;,
+                    &quot;https://www-f2.tinkoff.ru&quot;,
+                    &quot;https://www-f3.tinkoff.ru&quot;,
+                    &quot;https://www-test.tinkoff.ru&quot;,
+                    &quot;https://www-test-stable.tinkoff.ru&quot;,
+                    &quot;http://localhost:3000&quot;,
+                    &quot;http://localhost:8080&quot;,
+                    &quot;https://invest-qa.tinkoff.ru&quot;,
+                    &quot;https://business-qa2.tcsbank.ru&quot;,
+                    &quot;https://www-f1.tbank.ru&quot;,
+                    &quot;https://www-f2.tbank.ru&quot;,
+                    &quot;https://www-f3.tbank.ru&quot;,
+                    &quot;https://www-test.tbank.ru&quot;,
+                    &quot;https://www-test-stable.tbank.ru&quot;,
+                    &quot;https://business-qa2.tbank.ru&quot;,
+                    ]
+                    allowCredentials = true
+                    }
+
+                    categoryMapping {
+                    category {
+                    1 {
+                    quantity = 1
+                    }
+                    2 {
+                    quantity = 2
+                    }
+                    3 {
+                    quantity = 1
+                    }
+                    }
+                    }
+                    }
+
+                    kafka {
+                    clusters {
+                    kaasInvest {
+                    producer {
+                    config {
+                    servers = [
+                    &quot;test-kaas-invest-cluster-common-name.test.strp.tcsbank.ru:9093&quot;,
+                    ]
+                    requestTimeout = &quot;2s&quot;
+                    securityProtocol = &quot;SASL_SSL&quot;
+                    saslConfig {
+                    mechanism = &quot;SCRAM-SHA-512&quot;
+                    jaasConfig = &quot;org.apache.kafka.common.security.scram.ScramLoginModule required username=\&quot;&quot;${KAAS_USER}&quot;\&quot; password=\&quot;&quot;${KAAS_PASSWORD}&quot;\&quot;;&quot;
+                    }
+                    }
+                    topics {
+                    investTestingNotificationRaw = &quot;invest-testing.testing.notification.raw&quot;
+                    investTestingAttemptQueue = &quot;invest-testing.testing.attempt.queue&quot;
+                    investTestingTestStarted = &quot;invest-testing.testing.test.started&quot;
+                    }
+                    }
+                    }
+                    }
+                    }
+
+                    tracing {
+                    exporter {
+                    endpoint = &quot;https://collector.dtracing.dev.t-tech.team&quot;
+                    maxExportBatchSize = 1
+                    exportTimeout = 5000
+                    }
+                    attributes {
+                    &quot;service.name&quot; = &quot;testing-api&quot;
+                    &quot;service.namespace&quot; = &quot;invest-testing&quot;
+                    &quot;deployment.environment&quot; = &quot;qa&quot;
+                    }
+                    }
+                </content>
+            </application.conf>
+            <CalculateResultOperation.kt>
+                <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/logic/operation/CalculateResultOperation.kt</path>
+                <content>package ru.tinkoff.invest.testing.api.logic.operation
+
+                    import ru.tinkoff.invest.kutils.database.types.jooq.TxManager
+                    import ru.tinkoff.invest.kutils.errors.functions.throwsBusinessException
+                    import ru.tinkoff.invest.kutils.kapi.extensions.putMdc
+                    import ru.tinkoff.invest.testing.api.builder.dao.serializeDwhBody
+                    import ru.tinkoff.invest.testing.api.configuration.CacheManager
+                    import ru.tinkoff.invest.testing.api.configuration.CopyResultParams
+                    import ru.tinkoff.invest.testing.api.configuration.SectionParams
+                    import ru.tinkoff.invest.testing.api.configuration.TotalQuantity
+                    import ru.tinkoff.invest.testing.api.dto.dao.TestAttrsDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.sdp.DwhDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.sdp.ResultDwhDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.sdp.ResultQuestionsDwhDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.sdp.enums.SdpOperation
+                    import ru.tinkoff.invest.testing.api.dto.enums.QuestionSection
+                    import ru.tinkoff.invest.testing.api.error.exception.BusinessExceptionCode
+                    import ru.tinkoff.invest.testing.api.helper.BusinessWrapper
+                    import ru.tinkoff.invest.testing.api.helper.nullableInvalidateCache
+                    import ru.tinkoff.invest.testing.api.integration.http.AccountClientAdapter
+                    import ru.tinkoff.invest.testing.api.integration.kafka.KafkaClientAdapter
+                    import ru.tinkoff.invest.testing.api.integration.testing.TestingDaoAdapter
+                    import ru.tinkoff.invest.testing.api.logic.service.NonQualifiedTestCategoryChecker
+                    import ru.tinkoff.invest.testing.api.model.CalculateResultRequest
+                    import ru.tinkoff.invest.testing.api.model.CalculateResultResponse
+                    import ru.tinkoff.invest.testing.api.model.CalculateResultResponseResult
+                    import ru.tinkoff.invest.testing.api.model.WrongQuestion
+                    import ru.tinkoff.invest.testing.notification.event.TestingNotificationEvent.Event.Success
+                    import ru.tinkoff.kraken.Tags
+                    import java.time.LocalDateTime
+                    import java.util.UUID
+
+                    class CalculateResultOperation(
+                    private val testingDaoAdapter: TestingDaoAdapter,
+                    private val accountClientAdapter: AccountClientAdapter,
+                    private val kafkaClientAdapter: KafkaClientAdapter,
+                    private val questionSection: Map&lt;QuestionSection, SectionParams&gt;,
+                    private val nonQualifiedTestCategoryChecker: NonQualifiedTestCategoryChecker,
+                    private val txManager: TxManager,
+                    private val cacheManager: CacheManager,
+                    private val copyParams: List&lt;CopyResultParams&gt;,
+                    @Tags(TotalQuantity::class) private val totalQuantity: Int,
+                    ) {
+                    private val wrapper = BusinessWrapper()
+
+                    suspend fun invoke(request: CalculateResultRequest, siebelId: String): CalculateResultResponse = wrapper.wrap {
+                    val (_, type, score) = testingDaoAdapter.getTestAttrs(request.testId)
+                    ?: throwsBusinessException(BusinessExceptionCode.TEST_NOT_EXISTS)
+
+                    if (!nonQualifiedTestCategoryChecker.isNonQualifiedTestCategory(type)) {
+                    throwsBusinessException(BusinessExceptionCode.TEST_NOT_EXISTS)
+                    }
+
+                    val investId = cacheManager.investIdBySiebelCache.makeFunction(
+                    accountClientAdapter::getInvestId,
+                    nullableInvalidateCache(),
+                    ).invoke(siebelId) ?: throwsBusinessException(
+                    exceptionCode = BusinessExceptionCode.INVEST_ID_NOT_FOUND,
+                    message = &quot;siebelId = $siebelId&quot;,
+                    )
+                    investId.putMdc(&quot;investId&quot;)
+
+                    if (testingDaoAdapter.isTestPassed(investId, request.testId)) {
+                    throwsBusinessException(BusinessExceptionCode.TEST_ALREADY_PASSED)
+                    }
+
+                    val copyToTests = copyParams
+                    .filter { it.from == type }
+                    .mapNotNull {
+                    testingDaoAdapter.getTestAttrs(it.to)
+                    }
+
+                    val calculableSections = questionSection.filterValues { it.calculation }.map { (key, _) -&gt; key.value }
+                    val (calculableQuestions, nonCalculableQuestions) = testingDaoAdapter.getQuestionsByIdsInSections(
+                    request.questions.map { it.id },
+                    calculableSections,
+                    ).partition { dbQuestion -&gt;
+                    dbQuestion.countCorrect == request.questions.first { it.id == dbQuestion.id }.answers.size
+                    }
+
+                    val clientCalculableAnswers = request.questions
+                    .filter { question -&gt; question.id in calculableQuestions.map { it.id } }
+                    .flatMap { question -&gt; question.answers }
+
+                    val wrongQuestions: MutableList&lt;WrongQuestion&gt; =
+                    nonCalculableQuestions.map { WrongQuestion(it.id, it.title) }.toMutableList()
+                    val clientScore = if (clientCalculableAnswers.isNotEmpty()) {
+                    val correctAnswersCountByIds = testingDaoAdapter.getCorrectAnswersCountByIds(clientCalculableAnswers)
+
+                    calculableQuestions.fold(0) { clientScore, question -&gt;
+                    if (correctAnswersCountByIds.any { correctAnswers -&gt;
+                    question.id == correctAnswers.questionId &amp;&amp; question.countCorrect == correctAnswers.countCorrect
+                    }
+                    ) {
+                    clientScore + question.score
+                    } else {
+                    wrongQuestions.add(WrongQuestion(question.id, question.title))
+                    clientScore
+                    }
+                    }
+                    } else {
+                    0
+                    }
+
+                    val successfully = clientScore &gt;= score
+
+                    val resultId = createResult(investId, request, successfully, clientScore, copyToTests)
+
+                    val result = if (successfully) {
+                    kafkaClientAdapter.sendTestingNotificationEvent(investId, type, Success.TRUE)
+                    copyToTests.forEach { test -&gt;
+                    kafkaClientAdapter.sendTestingNotificationEvent(
+                    investId,
+                    test.type,
+                    Success.TRUE,
+                    )
+                    }
+                    null
+                    } else {
+                    CalculateResultResponseResult(totalQuantity, totalQuantity - wrongQuestions.size, wrongQuestions)
+                    }
+
+                    kafkaClientAdapter.sendAttemptEvent(investId, request.testId, resultId)
+
+                    CalculateResultResponse(successfully, result)
+                    }
+
+                    private suspend fun createResult(
+                    investId: UUID,
+                    request: CalculateResultRequest,
+                    successfully: Boolean,
+                    clientScore: Int,
+                    copyToTests: List&lt;TestAttrsDto&gt;,
+                    ): UUID = txManager.transactionResult { txContext -&gt;
+                    val resultId = UUID.randomUUID()
+                    val sdpEvents = mutableListOf&lt;Pair&lt;DwhDto, SdpOperation&gt;&gt;()
+                    testingDaoAdapter.createResult(txContext, resultId, investId, request.testId, successfully, clientScore).run {
+                    sdpEvents.add(
+                    Pair(
+                    ResultDwhDto(resultId, successfully, request.testId, investId, LocalDateTime.now()),
+                    SdpOperation.INSERT,
+                    ),
+                    )
+                    }
+                    if (successfully) {
+                    copyToTests.forEach { test -&gt;
+                    val id = UUID.randomUUID()
+                    testingDaoAdapter.createResult(
+                    txContext = txContext,
+                    id = id,
+                    investId = investId,
+                    testId = test.id,
+                    successfully = successfully,
+                    score = test.score,
+                    ).run {
+                    sdpEvents.add(
+                    Pair(
+                    ResultDwhDto(id, successfully, test.id, investId, LocalDateTime.now()),
+                    SdpOperation.INSERT,
+                    ),
+                    )
+                    }
+                    }
+                    }
+
+                    val requestQuestions = request.questions.flatMap { question -&gt;
+                    question.answers.map { answer -&gt;
+                    Triple(UUID.randomUUID(), question.id, answer)
+                    }
+                    }
+
+                    val ids = requestQuestions.map { it.first }
+                    val questionIds = requestQuestions.map { it.second }
+                    val answerIds = requestQuestions.map { it.third }
+
+                    testingDaoAdapter.createResultQuestion(txContext, resultId, ids, questionIds, answerIds)
+                    sdpEvents.add(Pair(ResultQuestionsDwhDto(resultId, ids, questionIds, answerIds), SdpOperation.INSERT))
+                    testingDaoAdapter.insertSdpEvents(txContext, sdpEvents.serializeDwhBody())
+                    resultId
+                    }
+                    }
+                </content>
+            </CalculateResultOperation.kt>
+            <TestingDaoAdapter.kt>
+                <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/integration/testing/TestingDaoAdapter.kt</path>
+                <content>package ru.tinkoff.invest.testing.api.integration.testing
+
+                    import org.jooq.DSLContext
+                    import ru.tinkoff.invest.kutils.database.extensions.toMap
+                    import ru.tinkoff.invest.kutils.database.functions.listQueryParam
+                    import ru.tinkoff.invest.kutils.database.functions.queryParam
+                    import ru.tinkoff.invest.kutils.database.types.QueryParam
+                    import ru.tinkoff.invest.kutils.database.wrapper.jooq.JooqExceptionWrapper
+                    import ru.tinkoff.invest.kutils.kapi.logging.IntegrationWrapper
+                    import ru.tinkoff.invest.kutils.metrics.DataBaseMetrics
+                    import ru.tinkoff.invest.testing.api.dto.dao.AnswerCountCorrectDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.AnswerDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.AttemptDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.GetResultTestDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.GetTestTypesDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.QuestionCountCorrectDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.QuestionDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.TestAttrsDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.TestDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.sdp.AttemptDwhDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.sdp.enums.SdpOperation
+                    import ru.tinkoff.invest.testing.api.dto.enums.TestTypes
+                    import ru.tinkoff.invest.testing.api.error.exception.InvocationExceptionCode
+                    import java.util.UUID
+
+                    class TestingDaoAdapter(
+                    private val dao: TestingDao,
+                    metrics: DataBaseMetrics,
+                    ) {
+                    private val wrapper = IntegrationWrapper.create&lt;TestingDaoAdapter&gt;(JooqExceptionWrapper, metrics, setOf(&quot;testing&quot;))
+
+                    suspend fun isTestPassedByType(investId: UUID, testType: String): Boolean {
+                    val params = setOf&lt;QueryParam&lt;*&gt;&gt;(
+                    queryParam(&quot;investId&quot;, investId),
+                    queryParam(&quot;testType&quot;, testType),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;isTestPassedByType&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_RESULT_TEST_GET,
+                    ) {
+                    dao.isTestPassedByType(params)
+                    }
+                    }
+
+                    suspend fun isTestPassed(investId: UUID, testId: UUID): Boolean {
+                    val params = setOf&lt;QueryParam&lt;*&gt;&gt;(
+                    queryParam(&quot;investId&quot;, investId),
+                    queryParam(&quot;testId&quot;, testId),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;isTestPassed&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_RESULT_GET,
+                    ) {
+                    dao.isTestPassed(params)
+                    }
+                    }
+
+                    suspend fun getTest(testType: String): TestDto? {
+                    val param = queryParam(&quot;testType&quot;, testType)
+
+                    return wrapper.wrap(
+                    point = &quot;getTest&quot;,
+                    params = mapOf(
+                    &quot;testType&quot; to testType,
+                    ),
+                    exceptionCode = InvocationExceptionCode.TESTING_TEST_GET,
+                    ) {
+                    dao.getTest(param)
+                    }
+                    }
+
+                    suspend fun getTestAttrs(testType: TestTypes): TestAttrsDto? {
+                    val param = queryParam(&quot;testType&quot;, testType.dbValue)
+
+                    return wrapper.wrap(
+                    point = &quot;getTestAttrs&quot;,
+                    exceptionCode = InvocationExceptionCode.TESTING_TEST_GET,
+                    ) {
+                    dao.getTestAttrs(param)
+                    }
+                    }
+
+                    suspend fun getTestType(id: UUID, txContext: DSLContext? = null): TestTypes? {
+                    val param = queryParam(&quot;id&quot;, id)
+
+                    return wrapper.wrap(
+                    point = &quot;getTestType&quot;,
+                    params = param.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_TEST_GET,
+                    ) {
+                    dao.getTestType(param, txContext)
+                    }
+                    }
+
+                    suspend fun getTestAttrs(id: UUID): TestAttrsDto? {
+                    val param = queryParam(&quot;id&quot;, id)
+
+                    return wrapper.wrap(
+                    point = &quot;getTestAttrs&quot;,
+                    exceptionCode = InvocationExceptionCode.TESTING_TEST_GET,
+                    ) {
+                    dao.getTestAttrs(param)
+                    }
+                    }
+
+                    suspend fun getPassedTests(investId: UUID, ignoreType: List&lt;String&gt;): List&lt;GetResultTestDto&gt; {
+                    val params = setOf(
+                    queryParam(&quot;investId&quot;, investId),
+                    listQueryParam(&quot;ignoreTypes&quot;, ignoreType),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;getPassedTests&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_RESULT_TEST_GET,
+                    ) {
+                    dao.getPassedTests(params)
+                    }
+                    }
+
+                    suspend fun getTypes(): List&lt;GetTestTypesDto&gt; {
+                    return wrapper.wrap(
+                    point = &quot;getTypes&quot;,
+                    exceptionCode = InvocationExceptionCode.TESTING_TEST_GET,
+                    ) {
+                    dao.getTypes()
+                    }
+                    }
+
+                    suspend fun getQuestions(testId: UUID): List&lt;QuestionDto&gt; {
+                    val param = queryParam(&quot;testId&quot;, testId)
+
+                    return wrapper.wrap(
+                    point = &quot;getQuestions&quot;,
+                    params = param.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_QUESTION_GET,
+                    ) {
+                    dao.getQuestions(param)
+                    }
+                    }
+
+                    suspend fun getAnswersByQuestionIds(questionIds: List&lt;UUID&gt;): List&lt;AnswerDto&gt; {
+                    val param = listQueryParam(&quot;questionIds&quot;, questionIds)
+
+                    return wrapper.wrap(
+                    point = &quot;getAnswersByQuestionIds&quot;,
+                    params = param.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_ANSWER_GET,
+                    ) {
+                    dao.getAnswersByQuestionIds(param)
+                    }
+                    }
+
+                    suspend fun getQuestionsByIdsInSections(
+                    questionIds: List&lt;UUID&gt;,
+                    sections: List&lt;String&gt;,
+                    ): List&lt;QuestionCountCorrectDto&gt; {
+                    val params = setOf(
+                    listQueryParam(&quot;questionIds&quot;, questionIds),
+                    listQueryParam(&quot;sections&quot;, sections),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;getQuestionsByIdsInSections&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_QUESTION_GET,
+                    ) {
+                    dao.getQuestionsByIdsInSections(params)
+                    }
+                    }
+
+                    suspend fun getCorrectAnswersCountByIds(
+                    answerIds: List&lt;UUID&gt;,
+                    ): List&lt;AnswerCountCorrectDto&gt; {
+                    val params = setOf(
+                    listQueryParam(&quot;answerIds&quot;, answerIds),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;getCorrectAnswersCountByIds&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_ANSWER_GET,
+                    ) {
+                    dao.getCorrectAnswersCountByIds(params)
+                    }
+                    }
+
+                    suspend fun createResult(
+                    txContext: DSLContext? = null,
+                    id: UUID,
+                    investId: UUID,
+                    testId: UUID,
+                    successfully: Boolean,
+                    score: Int,
+                    ): Int {
+                    val params = setOf(
+                    queryParam(&quot;id&quot;, id),
+                    queryParam(&quot;investId&quot;, investId),
+                    queryParam(&quot;testId&quot;, testId),
+                    queryParam(&quot;successfully&quot;, successfully),
+                    queryParam(&quot;score&quot;, score),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;createResult&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_RESULT_INSERT,
+                    ) {
+                    dao.createResult(txContext, params)
+                    }
+                    }
+
+                    suspend fun createResultQuestion(
+                    txContext: DSLContext,
+                    resultId: UUID,
+                    ids: List&lt;UUID&gt;,
+                    questionIds: List&lt;UUID&gt;,
+                    answerIds: List&lt;UUID&gt;,
+                    ): Int {
+                    val params = setOf(
+                    queryParam(&quot;resultId&quot;, resultId),
+                    listQueryParam(&quot;ids&quot;, ids),
+                    listQueryParam(&quot;questionIds&quot;, questionIds),
+                    listQueryParam(&quot;answerIds&quot;, answerIds),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;createResultQuestion&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_RESULT_QUESTION_INSERT,
+                    ) {
+                    dao.createResultQuestion(txContext, params)
+                    }
+                    }
+
+                    suspend fun hasSelfSectionResult(investId: UUID, testId: UUID): Boolean {
+                    val params = setOf&lt;QueryParam&lt;*&gt;&gt;(
+                    queryParam(&quot;investId&quot;, investId),
+                    queryParam(&quot;testId&quot;, testId),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;hasSelfSectionResult&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_SELF_SECTION_RESULT_GET,
+                    ) {
+                    dao.hasSelfSectionResult(params)
+                    }
+                    }
+
+                    suspend fun insertAttempt(
+                    txContext: DSLContext,
+                    investId: UUID,
+                    testId: UUID,
+                    powerAttorneyId: String?,
+                    ): UUID {
+                    val attemptId = UUID.randomUUID()
+
+                    val params = setOf(
+                    queryParam(&quot;attemptId&quot;, attemptId),
+                    queryParam(&quot;investId&quot;, investId),
+                    queryParam(&quot;testId&quot;, testId),
+                    queryParam(&quot;powerAttorneyId&quot;, powerAttorneyId),
+                    )
+
+                    wrapper.wrap(
+                    point = &quot;insertAttempt&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.ATTEMPT_UPDATE_ERROR,
+                    ) {
+                    dao.insertAttempt(txContext, params)
+                    }
+
+                    return attemptId
+                    }
+
+                    suspend fun insertAttemptAnswers(
+                    txContext: DSLContext,
+                    attemptId: UUID,
+                    answersIds: List&lt;UUID&gt;,
+                    ) {
+                    val params = setOf(
+                    queryParam(&quot;attemptId&quot;, attemptId),
+                    listQueryParam(&quot;answerIds&quot;, answersIds),
+                    )
+
+                    wrapper.wrap(
+                    point = &quot;insertAttemptAnswers&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.ATTEMPT_ANSWER_INSERT_ERROR,
+                    ) {
+                    dao.insertAttemptAnswers(txContext, params)
+                    }
+                    }
+
+                    suspend fun getAttemptAndLock(txContext: DSLContext, attemptId: UUID): AttemptDto? {
+                    val params = setOf(
+                    queryParam(&quot;attemptId&quot;, attemptId),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;getAttemptAndLock&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.ATTEMPT_SEARCH_ERROR,
+                    ) {
+                    dao.getAttemptAndLock(txContext, params)
+                    }
+                    }
+
+                    suspend fun updateAttemptResult(txContext: DSLContext, attemptId: UUID, resultId: UUID): AttemptDwhDto? {
+                    val params = setOf(
+                    queryParam(&quot;attemptId&quot;, attemptId),
+                    queryParam(&quot;resultId&quot;, resultId),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;updateAttemptResult&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.ATTEMPT_UPDATE_ERROR,
+                    ) {
+                    dao.updateAttemptResult(txContext, params)
+                    }
+                    }
+
+                    suspend fun insertSdpEvent(txContext: DSLContext, sdpOperation: SdpOperation, body: Pair&lt;String, String&gt;) {
+                    val params = setOf(
+                    queryParam(&quot;body&quot;, body.first),
+                    queryParam(&quot;type&quot;, body.second),
+                    queryParam(&quot;sdpOperation&quot;, sdpOperation.db),
+                    )
+                    return wrapper.wrap(
+                    point = &quot;insertSdpEvent&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_INSERT_SDP_EVENT_ERROR,
+                    ) {
+                    dao.insertSdpEvent(txContext, params)
+                    }
+                    }
+
+                    suspend fun insertSdpEvents(txContext: DSLContext, bodyList: List&lt;Triple&lt;String, String, SdpOperation&gt;&gt;) {
+                    val params = setOf(
+                    listQueryParam(&quot;bodyList&quot;, bodyList.map { it.first }),
+                    listQueryParam(&quot;typeList&quot;, bodyList.map { it.second }),
+                    listQueryParam(&quot;sdpOperationList&quot;, bodyList.map { it.third.db }),
+                    )
+                    return wrapper.wrap(
+                    point = &quot;insertSdpEvents&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_INSERT_SDP_EVENT_ERROR,
+                    ) {
+                    dao.insertSdpEvents(txContext, params)
+                    }
+                    }
+                    }
+                </content>
+            </TestingDaoAdapter.kt>
+            <TestingDao.kt>
+                <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/integration/testing/TestingDao.kt</path>
+                <content>package ru.tinkoff.invest.testing.api.integration.testing
+
+                    import io.opentelemetry.api.trace.Tracer
+                    import org.jooq.DSLContext
+                    import org.jooq.Record
+                    import ru.tinkoff.invest.kutils.database.config.DatabaseConfig
+                    import ru.tinkoff.invest.kutils.database.extensions.jooq.boolean
+                    import ru.tinkoff.invest.kutils.database.extensions.jooq.executeQuery
+                    import ru.tinkoff.invest.kutils.database.extensions.jooq.fetchQuery
+                    import ru.tinkoff.invest.kutils.database.extensions.jooq.fetchQueryRecordOne
+                    import ru.tinkoff.invest.kutils.database.extensions.jooq.fetchQueryRecordOneOrNull
+                    import ru.tinkoff.invest.kutils.database.extensions.jooq.stringOrNull
+                    import ru.tinkoff.invest.kutils.database.functions.queryParam
+                    import ru.tinkoff.invest.kutils.database.tracing.DbTracingSettings
+                    import ru.tinkoff.invest.kutils.database.tracing.with
+                    import ru.tinkoff.invest.kutils.database.types.QueryParam
+                    import ru.tinkoff.invest.kutils.kapi.functions.traceparent
+                    import ru.tinkoff.invest.testing.api.builder.dao.toAnswerCountCorrectDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toAnswerDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toAttemptDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toAttemptDwhDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toGetResultTestDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toQuestionCountCorrectDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toQuestionDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toTestAttrsDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toTestDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toTestTypeItemDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.AnswerCountCorrectDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.AnswerDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.AttemptDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.GetResultTestDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.GetTestTypesDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.QuestionCountCorrectDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.QuestionDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.TestAttrsDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.TestDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.sdp.AttemptDwhDto
+                    import ru.tinkoff.invest.testing.api.dto.enums.TestTypes
+                    import java.util.UUID
+
+                    class TestingDao(
+                    private val context: DSLContext,
+                    tracer: Tracer,
+                    dbConfig: DatabaseConfig,
+                    ) {
+                    private val dbType = &quot;postgres&quot;
+                    private val user = dbConfig.username
+                    private val connectionString = dbConfig.url
+                    private val tracing = DbTracingSettings(tracer, user, connectionString, dbType)
+
+                    suspend fun isTestPassedByType(params: Set&lt;QueryParam&lt;*&gt;&gt;): Boolean {
+                    val query = &quot;&quot;&quot;
+                    SELECT EXISTS (
+                    SELECT 1
+                    FROM testing.result r
+                    JOIN testing.test t ON (r.test_id = t.id)
+                    WHERE r.invest_id  = :investId::uuid
+                    AND r.successfully = true
+                    AND t.type = :testType::testing.test_type
+                    )
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.isTestPassedByType&quot;) {
+                    context.fetchQueryRecordOne(query, params)
+                    .map { it.boolean(&quot;exists&quot;) }
+                    }
+                    }
+
+                    suspend fun isTestPassed(params: Set&lt;QueryParam&lt;*&gt;&gt;): Boolean {
+                    val query = &quot;&quot;&quot;
+                    SELECT EXISTS (
+                    SELECT 1
+                    FROM testing.result
+                    WHERE invest_id  = :investId::uuid
+                    AND successfully = true
+                    AND test_id = :testId::uuid
+                    )
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.isTestPassed&quot;) {
+                    context.fetchQueryRecordOne(query, params)
+                    .map { it.boolean(&quot;exists&quot;) }
+                    }
+                    }
+
+                    suspend fun getTest(param: QueryParam&lt;String&gt;): TestDto? {
+                    val query = &quot;&quot;&quot;
+                    SELECT id, title, title_link, deep_link
+                    FROM testing.test
+                    WHERE deleted = false
+                    AND type = :testType::testing.test_type
+                    AND activated = true
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getTest&quot;) {
+                    context.fetchQueryRecordOneOrNull(query, param)
+                    ?.map(Record::toTestDto)
+                    }
+                    }
+
+                    suspend fun getTestAttrs(param: QueryParam&lt;UUID&gt;): TestAttrsDto? {
+                    val query = &quot;&quot;&quot;
+                    SELECT id, score, type
+                    FROM testing.test
+                    WHERE deleted = false
+                    AND id = :id
+                    AND activated = true
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getTestAttrs&quot;) {
+                    context.fetchQueryRecordOneOrNull(query, param)
+                    ?.map(Record::toTestAttrsDto)
+                    }
+                    }
+
+                    suspend fun getTestType(param: QueryParam&lt;UUID&gt;, txContext: DSLContext? = null): TestTypes? {
+                    val query = &quot;&quot;&quot;
+                    SELECT type
+                    FROM testing.test
+                    WHERE id = :id
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getTestType&quot;) {
+                    (txContext ?: context).fetchQueryRecordOneOrNull(query, param)
+                    ?.map { TestTypes.fromValue(it.stringOrNull(&quot;type&quot;)) }
+                    }
+                    }
+
+                    @JvmName(&quot;getTestAttrsByType&quot;)
+                    suspend fun getTestAttrs(param: QueryParam&lt;String&gt;): TestAttrsDto? {
+                    val query = &quot;&quot;&quot;
+                    SELECT id, score, type
+                    FROM testing.test
+                    WHERE deleted = false
+                    AND type = :testType::testing.test_type
+                    AND activated = true
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getTestAttrsByType&quot;) {
+                    context.fetchQueryRecordOneOrNull(query, param)
+                    ?.map(Record::toTestAttrsDto)
+                    }
+                    }
+
+                    suspend fun getPassedTests(params: Set&lt;QueryParam&lt;*&gt;&gt;): List&lt;GetResultTestDto&gt; {
+                    val query = &quot;&quot;&quot;
+                    SELECT *
+                    FROM (
+                    SELECT DISTINCT ON (t.type) t.title,
+                    t.type,
+                    CASE
+                    WHEN r.successfully IS null OR r.successfully = false THEN &apos;false&apos;
+                    ELSE &apos;true&apos;
+                    END AS successfully
+                    FROM testing.test t
+                    LEFT JOIN testing.result r ON t.id = r.test_id AND r.invest_id = :investId AND r.successfully = true
+                    WHERE t.type NOT IN (SELECT i.type
+                    FROM UNNEST(ARRAY[:ignoreTypes]::testing.test_type[]) as i(type))
+                    AND (
+                    t.activated = true
+                    AND t.deleted = false
+                    OR r.successfully = true
+                    )
+                    ORDER BY t.type, successfully desc) as t
+                    ORDER BY t.successfully
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getPassedTests&quot;) {
+                    context.fetchQuery(query, params).map { it.toGetResultTestDto() }
+                    }
+                    }
+
+                    suspend fun getTypes(): List&lt;GetTestTypesDto&gt; {
+                    val query = &quot;&quot;&quot;
+                    SELECT type, title
+                    FROM testing.test
+                    WHERE activated = true
+                    AND deleted = false
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getTypes&quot;) {
+                    context.fetchQuery(query).map(Record::toTestTypeItemDto)
+                    }
+                    }
+
+                    suspend fun getQuestions(param: QueryParam&lt;UUID&gt;): List&lt;QuestionDto&gt; {
+                    val query = &quot;&quot;&quot;
+                    SELECT q.id,
+                    q.title,
+                    q.hint,
+                    q.position,
+                    q.multiple,
+                    q.section,
+                    q.category,
+                    q.count_correct,
+                    c.question_id,
+                    c.answer_id
+                    FROM testing.question q
+                    LEFT JOIN testing.condition c ON (q.condition_id = c.id)
+                    WHERE q.test_id = :testId
+                    AND q.deleted = false
+                    AND EXISTS (SELECT 1
+                    FROM testing.answer a
+                    WHERE a.question_id = q.id
+                    AND a.deleted = false)
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getQuestions&quot;) {
+                    context.fetchQuery(query, param)
+                    .map { it.toQuestionDto() }
+                    }
+                    }
+
+                    suspend fun getAnswersByQuestionIds(param: QueryParam&lt;*&gt;): List&lt;AnswerDto&gt; {
+                    val query = &quot;&quot;&quot;
+                    SELECT id,
+                    title,
+                    correct,
+                    required,
+                    question_id,
+                    position
+                    FROM testing.answer
+                    WHERE question_id IN (SELECT t.questionId
+                    FROM unnest(ARRAY[:questionIds]) AS t(questionId))
+                    AND deleted = false
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getAnswersByQuestionIds&quot;) {
+                    context.fetchQuery(query, param)
+                    .map { it.toAnswerDto() }
+                    }
+                    }
+
+                    suspend fun getQuestionsByIdsInSections(
+                    params: Set&lt;QueryParam&lt;*&gt;&gt;,
+                    ): List&lt;QuestionCountCorrectDto&gt; {
+                    val query = &quot;&quot;&quot;
+                    SELECT id,
+                    count_correct,
+                    score,
+                    title
+                    FROM testing.question
+                    WHERE id IN (SELECT t.questionId
+                    FROM unnest(ARRAY[:questionIds]) AS t(questionId))
+                    AND section IN (SELECT t.section
+                    FROM unnest(ARRAY[:sections::testing.question_section]) AS t(section))
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getQuestionsByIdsInSections&quot;) {
+                    context.fetchQuery(query, params)
+                    .map { it.toQuestionCountCorrectDto() }
+                    }
+                    }
+
+                    suspend fun getCorrectAnswersCountByIds(
+                    params: Set&lt;QueryParam&lt;*&gt;&gt;,
+                    ): List&lt;AnswerCountCorrectDto&gt; {
+                    val query = &quot;&quot;&quot;
+                    SELECT question_id,
+                    count(*) AS count_correct
+                    FROM testing.answer
+                    WHERE id IN (SELECT t.answerId
+                    FROM unnest(ARRAY[:answerIds]) AS t(answerId))
+                    AND correct = true
+                    GROUP BY question_id
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getCorrectAnswersCountByIds&quot;) {
+                    context.fetchQuery(query, params)
+                    .map { it.toAnswerCountCorrectDto() }
+                    }
+                    }
+
+                    suspend fun createResult(txContext: DSLContext? = null, params: Set&lt;QueryParam&lt;*&gt;&gt;): Int {
+                    val query = &quot;&quot;&quot;
+                    INSERT INTO testing.result (id, invest_id, test_id, successfully, score)
+                    VALUES (:id::uuid, :investId::uuid, :testId::uuid, :successfully, :score)
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.createResult&quot;) {
+                    (txContext ?: context).executeQuery(query, params)
+                    }
+                    }
+
+                    suspend fun createResultQuestion(txContext: DSLContext, params: Set&lt;QueryParam&lt;*&gt;&gt;): Int {
+                    val query = &quot;&quot;&quot;
+                    INSERT INTO testing.result_question (id, result_id, question_id, answer_id)
+                    SELECT t.id, :resultId::uuid, t.question_id, t.answer_id
+                    FROM UNNEST(ARRAY[:ids], ARRAY[:questionIds], ARRAY[:answerIds]) AS t(id, question_id, answer_id)
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.createResultQuestion&quot;) {
+                    txContext.executeQuery(query, params)
+                    }
+                    }
+
+                    suspend fun hasSelfSectionResult(params: Set&lt;QueryParam&lt;*&gt;&gt;): Boolean {
+                    val query = &quot;&quot;&quot;
+                    SELECT EXISTS (
+                    SELECT 1
+                    FROM testing.self_section_result
+                    WHERE invest_id  = :investId::uuid
+                    AND test_id = :testId::uuid
+                    )
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.hasSelfSectionResult&quot;) {
+                    context.fetchQueryRecordOne(query, params)
+                    .map { it.boolean(&quot;exists&quot;) }
+                    }
+                    }
+
+                    suspend fun insertAttempt(txContext: DSLContext, params: Set&lt;QueryParam&lt;*&gt;&gt;): Int {
+                    val query = &quot;&quot;&quot;
+                    INSERT INTO testing.attempt(id, invest_id, test_id, power_attorney_id)
+                    VALUES (:attemptId, :investId, :testId, :powerAttorneyId)
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.insertAttempt&quot;) {
+                    txContext.executeQuery(query, params)
+                    }
+                    }
+
+                    suspend fun insertAttemptAnswers(txContext: DSLContext, params: Set&lt;QueryParam&lt;*&gt;&gt;): Int {
+                    val query = &quot;&quot;&quot;
+                    INSERT INTO testing.attempt_answer(attempt_id, answer_id)
+                    SELECT :attemptId, t.answerId
+                    FROM unnest(ARRAY[:answerIds]) AS t(answerId)
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.insertAttemptAnswers&quot;) {
+                    txContext.executeQuery(query, params)
+                    }
+                    }
+
+                    suspend fun getAttemptAndLock(txContext: DSLContext, params: Set&lt;QueryParam&lt;*&gt;&gt;): AttemptDto? {
+                    val query = &quot;&quot;&quot;
+                    SELECT a.invest_id, a.test_id, a.result_id
+                    FROM testing.attempt a
+                    WHERE a.id = :attemptId::uuid
+                    FOR NO KEY UPDATE
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getAttempt&quot;) {
+                    txContext.fetchQueryRecordOneOrNull(query, params)?.map { it.toAttemptDto() }
+                    }
+                    }
+
+                    suspend fun updateAttemptResult(txContext: DSLContext, params: Set&lt;QueryParam&lt;*&gt;&gt;): AttemptDwhDto? {
+                    val query = &quot;&quot;&quot;
+                    UPDATE testing.attempt
+                    SET result_id = :resultId::uuid
+                    WHERE id = :attemptId::uuid
+                    RETURNING id, invest_id, test_id, created_at, result_id
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.updateAttemptResult&quot;) {
+                    txContext.fetchQueryRecordOneOrNull(query, params)?.map { it.toAttemptDwhDto() }
+                    }
+                    }
+
+                    suspend fun insertSdpEvent(txContext: DSLContext, params: Set&lt;QueryParam&lt;*&gt;&gt;) {
+                    val query = &quot;&quot;&quot;
+                    INSERT INTO testing.sdp_event (body, status, operation, type, traceparent)
+                    VALUES(:body::jsonb, &apos;wait&apos;::testing.event_status, :sdpOperation::testing.sdp_operation,
+                    :type::testing.sdp_event_type, :traceparent)
+                    &quot;&quot;&quot;.trimIndent()
+                    return tracing.with(query, &quot;db.insertSdpEvent&quot;) {
+                    txContext.executeQuery(query, (params + queryParam(&quot;traceparent&quot;, traceparent())))
+                    }
+                    }
+
+                    suspend fun insertSdpEvents(txContext: DSLContext, params: Set&lt;QueryParam&lt;*&gt;&gt;) {
+                    val query = &quot;&quot;&quot;
+                    INSERT INTO testing.sdp_event (body, status, operation, type, traceparent)
+                    SELECT t.body, &apos;wait&apos;::testing.event_status, t.sdpOperation::testing.sdp_operation, t.eventType::testing.sdp_event_type, :traceparent
+                    FROM unnest(ARRAY[:bodyList]::json[], ARRAY[:typeList], ARRAY[:sdpOperationList]) AS t(body, eventType, sdpOperation)
+                    &quot;&quot;&quot;.trimIndent()
+                    return tracing.with(query, &quot;db.insertSdpEvents&quot;) {
+                    txContext.executeQuery(query, (params + queryParam(&quot;traceparent&quot;, traceparent())))
+                    }
+                    }
+                    }
+                </content>
+            </TestingDao.kt>
+            <ConfigurationModule.kt>
+                <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/configuration/ConfigurationModule.kt</path>
+                <content>package ru.tinkoff.invest.testing.api.configuration
+
+                    import com.typesafe.config.Config
+                    import io.github.config4k.extract
+                    import ru.tinkoff.invest.kutils.database.config.DatabaseConfig
+                    import ru.tinkoff.invest.kutils.errors.config.ChatAlertsMappingConfig
+                    import ru.tinkoff.invest.kutils.errors.mapping.ConfigChatAlert
+                    import ru.tinkoff.invest.kutils.kafka.config.KafkaConfigModule
+                    import ru.tinkoff.invest.testing.api.dto.common.TestConfig
+                    import ru.tinkoff.invest.testing.api.dto.enums.Category
+                    import ru.tinkoff.invest.testing.api.dto.enums.ClientType
+                    import ru.tinkoff.invest.testing.api.dto.enums.QuestionSection
+                    import ru.tinkoff.invest.testing.api.dto.enums.TestTypes
+                    import ru.tinkoff.invest.testing.api.error.exception.BusinessExceptionCode
+                    import ru.tinkoff.kraken.Tags
+                    import ru.tinkoff.kraken.typesafe.config.TypesafeConfigModule
+
+                    interface TotalQuantity
+
+                    interface ConfigurationModule : TypesafeConfigModule.FileWatchBased, KafkaConfigModule {
+                    fun configuration(config: Config): ApplicationConfiguration = config.extract(&quot;application&quot;)
+
+                    fun testingDbConfiguration(config: ApplicationConfiguration): DatabaseConfig = config.testing
+
+                    fun restConfiguration(config: ApplicationConfiguration): RestConfiguration = config.rest
+
+                    fun questionSectionConfig(config: ApplicationConfiguration): Map&lt;QuestionSection, SectionParams&gt; =
+                    mapOf(
+                    QuestionSection.SELF to config.questionSection.self,
+                    QuestionSection.LORE to config.questionSection.lore,
+                    )
+
+                    fun copyResultConfig(config: ApplicationConfiguration): List&lt;CopyResultParams&gt; =
+                    config.copyResult.map {
+                    CopyResultParams(
+                    from = TestTypes.fromApiValue(it.from),
+                    to = TestTypes.fromApiValue(it.to),
+                    )
+                    }
+
+                    fun testTypesForStartedConfig(config: ApplicationConfiguration): List&lt;TestTypes&gt; =
+                    config.testTypesForStarted.map {
+                    requireNotNull(TestTypes.fromValue(it)) { &quot;Для типа теста $it не найдено соответствие в коде&quot; }
+                    }
+
+                    fun testsConfig(config: ApplicationConfiguration): Map&lt;TestTypes, TestConfig&gt; =
+                    config.testsConfig.map { (k, v) -&gt;
+                    val type = TestTypes.fromApiValue(k)
+                    val testConfig = TestConfig(
+                    clientType = ClientType.valueOf(v.clientType.uppercase()),
+                    category = Category.valueOf(v.category.uppercase()),
+                    )
+                    type to testConfig
+                    }.toMap()
+
+                    fun testDescription(config: ApplicationConfiguration): Map&lt;Category, TestDescriptionConfiguration&gt; =
+                    config.testDescription.mapKeys { (k, _) -&gt;
+                    Category.valueOf(k.uppercase())
+                    }
+
+                    fun logicConfig(config: ApplicationConfiguration): LogicConfig {
+                    return config.logic
+                    }
+
+                    fun errorsConfig(config: ApplicationConfiguration) = config.errors
+
+                    fun sentryConfig(config: ApplicationConfiguration) = config.sentry
+
+                    fun corsConfig(config: ApplicationConfiguration) = config.cors
+
+                    fun openApiConfig(config: ApplicationConfiguration) = config.openApi
+
+                    fun cacheConfig(config: ApplicationConfiguration) = config.cache
+
+                    fun categoryMapping(config: ApplicationConfiguration) = config.categoryMapping
+
+                    @Tags(TotalQuantity::class)
+                    fun totalQuantity(config: ApplicationConfiguration): Int = config.categoryMapping.category.values.sumOf {
+                    it.quantity
+                    }
+
+                    fun chatAlertsConfig() = run {
+                    ChatAlertsMappingConfig(
+                    BusinessExceptionCode.values().filter { it.needAlert }.associate {
+                    it.stringCode to ConfigChatAlert(BusinessExceptionCode.alertName, it.message, it.stringCode)
+                    },
+                    )
+                    }
+                    }
+                </content>
+            </ConfigurationModule.kt>
+            <ApplicationConfiguration.kt>
+                <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/configuration/ApplicationConfiguration.kt</path>
+                <content>package ru.tinkoff.invest.testing.api.configuration
+
+                    import ru.tinkoff.invest.kutils.common.config.RestClientConfig
+                    import ru.tinkoff.invest.kutils.database.config.DatabaseConfig
+                    import ru.tinkoff.invest.kutils.errors.config.ErrorsMappingConfig
+                    import ru.tinkoff.invest.kutils.kapi.config.OpenApiConfiguration
+                    import ru.tinkoff.invest.kutils.sentry.config.SentryConfig
+                    import ru.tinkoff.invest.testing.api.dto.enums.TestTypes
+                    import ru.tinkoff.kraken.undertow.CorsConfig
+
+                    data class ApplicationConfiguration(
+                    val sentry: SentryConfig?,
+                    val testing: DatabaseConfig,
+                    val cache: CacheConfig,
+                    val rest: RestConfiguration,
+                    val questionSection: QuestionSectionConfig,
+                    val testDescription: Map&lt;String, TestDescriptionConfiguration&gt;,
+                    val logic: LogicConfig,
+                    val errors: ErrorsMappingConfig,
+                    val cors: CorsConfig,
+                    val openApi: OpenApiConfiguration?,
+                    val copyResult: List&lt;CopyResultParamsRaw&gt;,
+                    val categoryMapping: CategoryMapping,
+                    val testTypesForStarted: List&lt;String&gt; = emptyList(),
+                    val testsConfig: Map&lt;String, TestConfigMapping&gt;,
+                    )
+
+                    data class CopyResultParamsRaw(
+                    val from: String,
+                    val to: String,
+                    )
+
+                    data class TestConfigMapping(
+                    val clientType: String,
+                    val category: String,
+                    )
+
+                    data class CopyResultParams(
+                    val from: TestTypes,
+                    val to: TestTypes,
+                    )
+
+                    data class RestConfiguration(
+                    val account: RestClientConfig,
+                    val confidantPoa: RestClientConfig,
+                    val riskProfileProcessor: RestClientConfig,
+                    )
+
+                    data class QuestionSectionConfig(
+                    val self: SectionParams,
+                    val lore: SectionParams,
+                    val riskProfile: SectionParams,
+                    )
+
+                    data class SectionParams(
+                    val random: Boolean,
+                    val position: Int,
+                    val title: String,
+                    val calculation: Boolean,
+                    )
+
+                    data class TestDescriptionConfiguration(
+                    val label: String,
+                    val description: String,
+                    val remark: String,
+                    )
+
+                    data class LogicConfig(
+                    val countAnswer: Int,
+                    val allowType: List&lt;AllowItem&gt; = emptyList(),
+                    )
+
+                    data class AllowItem(
+                    val platform: String,
+                    val appVersion: String,
+                    val type: String,
+                    )
+
+                    data class CacheConfig(
+                    val investIdBySiebel: String,
+                    val questionsByTestIdCache: String,
+                    val investTypeByInvestIdCache: String,
+                    )
+
+                    data class CategoryMapping(
+                    val category: Map&lt;String, Category&gt;,
+                    )
+
+                    data class Category(
+                    val quantity: Int,
+                    )
+                </content>
+            </ApplicationConfiguration.kt>
+        </sourceCode>
+    </before>
+    <now>
+        <sourceCode>
+            <calculateResultAlgorithm.adoc>
+                <path>/home/a.alenushka/work/invest-testing/common/service-docs/docs/modules/invest-testing/pages/invest-testing-api/commonSpec/calculateResultAlgorithm.adoc</path>
+                <content>. [[testId]] НАЙТИ запись в *test*, ГДЕ *id = testId* из входных параметров И *activated = true* И *deleted = false*
+                    .. ЕСЛИ запись *не найдена*, ТОГДА отправить *алерт* и завершить обработку с ошибкой xref:#TestNotFound[TestNotFound]
+                    .. Получить *category* из xref:#config[Списка тестов], ГДЕ *type = type* из link:#testId[test]
+                    ... ЕСЛИ запись не найдена ИЛИ [.added-text]#*category NOT IN testCategoriesForInstruments* из xref:#testCategoriesForInstruments[Настроек]# [.line-through]#*category != &apos;not_qualified_test&apos;*#, ТОГДА отправить *алерт* и завершить обработку с ошибкой xref:#TestNotFound[TestNotFound]
+
+                    . [.line-through]#Получить общее кол-во вопросов (*total*) в тесте: Рассчитать значение *total* на основании xref:#config[настроек категорий вопросов]: *total = SUM(quantity)*#
+
+                    . [[investId]] НАЙТИ в кэше xref:invest-testing:invest-testing-api/cache/investIdBySiebel.adoc[investIdBySiebel] запись, ГДЕ *siebelId = x-tcs-siebel-id* из xref:#contractDescription[вх. параметров]
+                    .. ЕСЛИ получена ошибка *InvestIdNotFound*, ТОГДА завершить обработку с ошибкой xref:#InvestIdNotFound[InvestIdNotFound]
+
+                    . Проверка на уже пройденный тест:
+                    .. НАЙТИ запись в таблице *result*, ГДЕ *invest_id = investId* из xref:#investId[*investId*] И *test_id = testId* из xref:#contractDescription[вх. параметров] И *successfully = true*
+                    ... ЕСЛИ запись *найдена*, ТОГДА завершить обработку с ошибкой xref:#AlreadyPassed[AlreadyPassed]
+
+                    . [[testForCopy]] Получить  xref:#config[Типы тестов для копирования результатов тестирования]:
+                    ЕСЛИ *type* из записи в xref:#testId[найденном тесте] *IN typeFrom*, ТОГДА НАЙТИ запись в таблице *test*, ГДЕ *type IN typeTo* И *activated = true* И *deleted = false*
+
+                    . [[getQuestions]] [.added-text]#НАЙТИ записи в таблице *question*, ГДЕ *test_id = testId* из xref:#contractDescription[вх. параметров] И *deleted = false*#
+                    .. [.added-text]#[[questions_count]] Если *category = &apos;crypto_test&apos;* из xref:#config[Списка тестов], ГДЕ *type = type* из link:#testId[test], то общее количество вопросов *total* = количество записей в таблице *question* с *section=&apos;lore&apos;*#
+                    .. [.added-text]#Если *category =&apos;not_qualified_test&apos;* из xref:#config[Списка тестов], ГДЕ *type = type* из link:#testId[test], то *total = SUM(quantity)* из xref:#config[настроек категорий вопросов]#
+                    .. [.added-text]#[[getQuestionsClient]] Отфильтровать link:#getQuestions[записи], ГДЕ *id IN questions[].id* из xref:#contractDescription[вх. параметров]#
+                    .. [.added-text]#[[getSectionQuestion]] Определить наличие вопросов с *section=&apos;self&apos;* в link:#getQuestionsClient[отфильтрованных записях]#
+                    .. [[questions]] Выбрать вопросы для расчета *score*:
+                    ... Отфильтровать записи [.line-through]#НАЙТИ записи в таблице *question*, ГДЕ *id IN questions[].id* из xref:#contractDescription[вх. параметров] И# с *calculation = true* из xref:#config[Блоки теста] И *count_correct = COUNT(questions[].id.answers[])*
+                    +
+                    WARNING: К расчету score отбираются вопросы, которые требуют хотя бы один правильный ответ и для них передано во входных параметрах ожидаемое количество ответов
+                    +
+                    . Выбрать правильные ответы для вопросов для расчета *score*
+                    .. [[answers]]НАЙТИ в таблице *answer* записи, ГДЕ *id IN questions[].id.answers[]* из xref:#questions[из отобранных для расчета score вопросов] И *correct = true*
+
+                    . [[calculatedResult]] На основании каждого вопроса из xref:#questions[отобранных для расчета score] рассчитать итоговый результат теста:
+                    .. ЕСЛИ *кол-во полученных xref:#answers[правильных ответов] = count_correct* вопроса из xref:#questions[отобранных], ТОГДА итоговый *score += score* вопроса
+                    +
+                    WARNING: тест будет считаться пройденным если итоговый рассчитанный score &gt;= score из xref:#testId[теста]. При этом теоретически можно набрать необходимый score одним вопросом.
+                    +
+                    .. [[wrong_questions]] ИНАЧЕ добавить *id* и *title* неправильно отвеченного вопроса в xref:#response[выходной объект]
+
+                    . [[result]] Создать запись в таблице *result*
+                    +
+                    .[red]#Маппинг#
+                    [%collapsible]
+                    ====
+                    [cols=&apos;,9a&apos;]
+                    |===
+                    |Поле          |Как заполнять
+
+                    |id
+                    |Сгенерировать uuid
+
+                    |invest_id
+                    |xref:#investId[investId]
+
+                    |successfully
+                    a|* true, если сумма score из xref:#calculatedResult[рассчитанного score] &gt;= score из xref:#testId[найденного теста]
+                    * false, иначе
+                    |test_id
+                    |testId из входных параметров
+
+                    |score
+                    |xref:#calculatedResult[score]
+                    |===
+                    ====
+                    +
+                    .. [[calculateResult10]]ЕСЛИ *найден* xref:#config[тип теста для копирования результата] И *successfully=true*, ТОГДА для каждой найденной записи сделать вставку в *result*
+                    +
+                    .[red]#Маппинг#
+                    [%collapsible]
+                    ====
+                    [cols=&apos;,9a&apos;]
+                    |===
+                    |Поле          |Как заполнять
+
+                    |id
+                    |Сгенерировать uuid
+
+                    |invest_id
+                    |xref:#investId[investId]
+
+                    |successfully
+                    a|* true, если сумма score из xref:#calculatedResult[рассчитанного score] &gt;= score из xref:#testId[найденного теста]
+                    * false, иначе
+
+                    |test_id
+                    |testId из xref:#config[найденного типа теста для копирования результата]
+
+                    |score
+                    |xref:#calculatedResult[score]
+                    |===
+                    ====
+                    +
+
+                    . [[calculateResult11]]Создать запись в таблицу *result_question* для каждого элемента из массивов *questions* и *answers* из xref:#contractDescription[вх. параметров]
+                    +
+                    .[red]#Маппинг#
+                    [%collapsible]
+                    ====
+                    [cols=&apos;,9a&apos;]
+                    |===
+                    |Поле           |Как заполнять
+
+                    |id
+                    |Сгенерировать uuid
+
+                    |result_id
+                    |id записи из xref:#result[таблицы result]
+
+                    |question_id
+                    |questions.id из xref:#contractDescription[вх. параметров]
+
+                    |answer_id
+                    |Элемент массива questions.answers.id
+                    |===
+                    ====
+                    +
+
+                    . Для каждой записи из шагов xref:#calculateResult10[10] и xref:#calculateResult11[11] батчем сохранить записи в таблицу в *sdp_event*.
+                    +
+                    .[red]#Маппинг для result#
+                    [%collapsible]
+                    ====
+                    |===
+                    |Поле                      |Как заполнять
+
+                    |body              |json вставленной result согласно дата-контракту
+                    |sdpOperation      |I - insert
+                    |type              |result
+                    |status            |wait
+                    |===
+                    ====
+
+                    +
+                    .[red]#Маппинг для result_question#
+                    [%collapsible]
+                    ====
+                    [cols=&apos;,9a&apos;]
+                    |===
+                    |Поле                      |Как заполнять
+
+                    |body              |
+                    !===
+                    !json поле         !значение
+
+                    !resultId          !id вставленной записи result
+                    !ids               !Список id вставленных result_question
+                    !questionIds       !Список id question
+                    !answerIds         !Список id answer
+                    !===
+                    |sdpOperation      |I - insert
+                    |type              |result
+                    |status            |wait
+                    |===
+                    ====
+
+                    . ЕСЛИ сумма xref:#calculatedResult[score] &gt;= *score* из xref:#testId[найденного теста], ТОГДА сформировать событие:
+                    .. [.added-text]#ЕСЛИ *category = &apos;not_qualified_test&apos;* из xref:#config[Списка тестов], ГДЕ *type = type* из link:#testId[test]#, то преобразовать в соответствии с ({url}{page-component-version}{proto}/testing-notification.proto[proto]) и положить в топик https://devplatform.tcsbank.ru/tenants/invest-testing/kafka/topics/view/346881[invest-testing.testing.notification.raw] с ключом xref:#investId[*investId*]
+                    +
+                    .[red]#Маппинг#
+                    [%collapsible]
+                    ====
+                    [cols=&apos;,9a&apos;]
+                    |===
+                    |Поле          |Как заполнять
+
+                    | id           |Сгенерировать uuid
+                    | created_at   |now()
+                    | invest_id    |xref:#investId[investId]
+                    | type         |
+                    !===
+                    !type в xref:#testId[найденном тесте] !type в событии
+
+                    !derivative                   !DERIVATIVE
+                    !structured_bonds             !STRUCTURED_BONDS
+                    !closed_fund                  !CLOSED_FUND
+                    !bond                         !BOND
+                    !structured_income_bonds      !STRUCTURED_INCOME_BONDS
+                    !russian_shares               !RUSSIAN_SHARES
+                    !leverage                     !LEVERAGE
+                    !foreign_shares               !FOREIGN_SHARES
+                    !foreign_etf                  !FOREIGN_ETF
+                    !foreign_bond                 !FOREIGN_BOND
+                    !non_quoted_instruments       !NON_QUOTED_INSTRUMENTS
+                    !convertible_bonds            !CONVERTIBLE_BONDS
+                    !russian_bonds_foreign_law    !RUSSIAN_BONDS_FOREIGN_LAW
+                    !foreign_bonds_russian_law    !FOREIGN_BONDS_RUSSIAN_LAW
+                    !money_secured_bonds          !MONEY_SECURED_BONDS
+                    !===
+                    |successfully   |true
+                    |===
+                    ====
+                    +
+                    .. [.added-text]#ЕСЛИ *category = &apos;crypto_test&apos;* из xref:#config[Списка тестов], ГДЕ *type = type* из link:#testId[test]#, то преобразовать в соответствии с ({url}{page-component-version}{proto}/testing-crypto-notification.proto[proto]) и положить в топик link:++https://devplatform.tcsbank.ru/tenants/invest-testing/kafka/topics/view/???[invest-testing.testing.crypto.notification.raw] с ключом xref:#investId[*investId*]
+                    +
+                    .[red]#Маппинг#
+                    [%collapsible%open]
+                    ====
+                    [cols=&apos;,9a&apos;]
+                    |===
+                    |Поле          |Как заполнять
+
+                    |id           |Сгенерировать uuid
+                    |created_at   |now()
+                    |invest_id    |xref:#investId[investId]
+                    |type         |type в xref:#testId[найденном тесте] в верхнем регистре
+                    |successfully  |true
+                    |===
+                    ====
+                    +
+                    .. ЕСЛИ *найдены* записи в xref:#config[типах теста для копирования результата], ТОГДА *для каждой* найденной записи:
+                    ... Сформировать еще одно событие
+                    ... Преобразовать в соответствии с ({url}{page-component-version}{proto}/testing-notification.proto[proto]) и положить в топик https://devplatform.tcsbank.ru/tenants/invest-testing/kafka/topics/view/346881[invest-testing.testing.notification.raw] с ключом xref:#investId[*investId*]
+                    . Сформировать событие в соответствии с ({url}{page-component-version}{proto}/testing-attempt.proto[proto]) и положить в топик https://devplatform.tcsbank.ru/tenants/invest-testing/kafka/topics/view/346882[invest-testing.testing.attempt.queue] с ключом xref:#investId[*investId*]
+                    +
+                    .[red]#Маппинг#
+                    [%collapsible%open]
+                    ====
+                    [cols=&apos;,,9a&apos;]
+                    |===
+                    2+|Поле             |Как заполнять
+
+                    2+|id               |Сгенерировать UUID
+                    2+|created_at       |now()
+                    2+|invest_id        |xref:#investId[investId]
+                    2+|test_id          |testId из xref:#contractDescription[вх. параметров]
+                    2+|result           |Все отобранные вопросы для всех ответов
+                    | |id               |id записи из xref:#result[result]
+                    | |[.added-text]#has_section_self# |* [.added-text]#Если в link:#getSectionQuestion[полученных вопросах] есть хотя бы одна запись с *section=&apos;self&apos;*, то true#
+                    * [.added-text]#Иначе false#
+
+                    |===
+                    ====
+                    +
+                    . [[response]]Сформировать ответ
+                    +
+                    .[red]#Маппинг#
+                    [%collapsible]
+                    ====
+                    [cols=&apos;,,,9a&apos;]
+                    |===
+                    3+|Поле     |Как заполнять
+
+                    3+|successfully
+                    a|* ЕСЛИ xref:#calculatedResult[score] &gt;= score из xref:#testId[найденного теста], ТОГДА true
+                    * ИНАЧЕ false
+
+                    3+|result       |ЕСЛИ successfully = true, ТОГДА не передавать объект
+                    | 2+|total      |xref:#questions_count[Общее кол-во вопросов] в тесте
+                    | 2+|correct    |xref:#questions_count[Общее кол-во вопросов] в тесте* - *кол-во элементов в wrongQuestions[]
+                    | 2+|wrongQuestions[]   |из xref:#wrong_questions[неверно отвеченного вопроса]
+                    | | | id                |id
+                    | | | title             |title
+                    |===
+                    ====
+
+                    . Завершить обработку</content>
+            </calculateResultAlgorithm.adoc>
+            <calculateResult.adoc>
+                <path>/home/a.alenushka/work/invest-testing/common/service-docs/docs/modules/invest-testing/pages/invest-testing-api/calculateResult.adoc</path>
+                <content>= (calculateResult) Метод подсчета результата тестирования
+
+                    == Описание
+
+                    На основе входных данных принимает решение пройден или нет тест клиента. При неудачном прохождении теста возвращает статистику с общим количеством вопросов в тесте и списком неправильно отвеченных вопросов
+
+                    == История изменений
+
+                    .Раскрыть
+                    [%collapsible]
+                    ====
+                    |===
+                    |Дата изменения| Техническое описание изменений |Задача в JIRA
+
+                    |17.01.2023
+                    |Документ создан
+                    |https://jira.tcsbank.ru/browse/KINV-1662[KINV-1662]
+
+                    |04.07.2021
+                    |Расчет результата по весу вопроса
+                    |https://jira.tcsbank.ru/browse/KINV-1724[KINV-1724]
+
+                    |29.07.2021
+                    |Корректировка описания ошибок
+                    |https://jira.tcsbank.ru/browse/KINV-1959[KINV-1959]
+
+                    |30.08.2021
+                    |Расширен список тестов
+                    |https://jira.tcsbank.ru/browse/KINV-2260[KINV-2260]
+
+                    |29.09.2021
+                    |Добавлены кэши
+                    |https://jira.tcsbank.ru/browse/KINV-2489[KINV-2489]
+
+                    |29.09.2021
+                    |Отливать событие о завершении попытки прохождении теста
+                    |https://jira.tcsbank.ru/browse/KINV-2466[KINV-2466]
+
+                    |18.10.2021
+                    |Проверка того, что тест пройден, перед записью результата
+                    |https://jira.tcsbank.ru/browse/KINV-2634[KINV-2634]
+
+                    |03.12.2021
+                    |Возвращать ошибку для поверенного
+                    |https://jira.tcsbank.ru/browse/KINV-3081[KINV-3081]
+
+                    |19.01.2022
+                    |Добавлена обработка нового поля activated в таблице test
+                    |https://jira.tcsbank.ru/browse/KINV-3449[KINV-3449]
+
+                    |25.01.2022
+                    |Добавлено автоматическое проставление результатов тестирования при прохождении теста derivative или option
+                    |https://jira.tcsbank.ru/browse/KINV-3448[KINV-3448]
+
+                    |07.02.2022
+                    |Добавлен новый атрибут в схему proto
+                    |https://jira.tcsbank.ru/browse/KINV-3942[KINV-3942]
+
+                    |30.01.2023
+                    |Добавлена статистика прохождения теста в выходном объекте
+                    |https://jira.tcsbank.ru/browse/KINV-7329[KINV-7329]
+
+                    |07.05.2024
+                    |Проверка теста по категории
+                    |https://jira.tcsbank.ru/browse/KINV-14577[KINV-14577]
+
+                    |29.01.2024
+                    |Отправка событий в SDP
+                    |https://jira3.tcsbank.ru/browse/INVACC-5025[INVACC-5025]
+
+                    |08.07.2025
+                    |Переезд invest-testing на KaaS
+                    |https://jira3.tcsbank.ru/browse/ISELF-1414[ISELF-1414]
+
+                    |11.02.2026
+                    |Добавление крипто-тестов
+                    |https://jira3.tcsbank.ru/browse/ISELF-2299[ISELF-2299]
+
+                    |===
+                    ====
+
+                    == Описание контракта
+
+                    NOTE: [[contractDescription]] xref:ROOT:openapi/invest-testing-api-v1.openapi.adoc[POST /test/result]
+
+                    == [[config]]Настройки
+
+                    include::../common/configs.adoc[tag=testTypes]
+                    include::../common/configs.adoc[tag=categoryQuestions]
+                    include::../common/configs.adoc[tag=testBlocks]
+                    include::../common/configs.adoc[tag=testTypesForCopy]
+                    include::../common/configs.adoc[tag=testCategoriesForInstruments]
+
+                    == Алгоритм работы
+
+                    . Проверка на попытку пройти тест за &quot;босса&quot;:
+                    ЕСЛИ передан не пустой *x-tcs-principal-siebel-id*, завершить обработку с ошибкой *422 ConfidantForbidden*
+                    +
+                    include::commonSpec/calculateResultAlgorithm.adoc[]
+
+                    == Описание ошибок
+
+                    [.stripes-even,cols=&apos;,,9,9,^&apos;]
+                    |===
+                    |HTTP Status Code |errorCode |errorMessage |Описание |Alert
+
+                    include::../common/errors_description.adoc[tags=400ValidationError;ConfidantForbidden;AlreadyPassed;TestNotFound;InternalError;InvestIdNotFound]
+
+                    |===
+
+                    == Описание alert
+
+                    [.stripes-even,cols=&apos;,9,9,^&apos;]
+                    |===
+                    |errorCode |errorMessage |Описание |Alert
+
+                    include::../common/errors_description.adoc[tags=QuestionsSettingsError]
+
+                    |===
+
+                </content>
+            </calculateResult.adoc>
+            <application.conf>
+                <path>/home/a.alenushka/work/invest-testing/api/k8s/qa/config/application.conf</path>
+                <content>application {
+                    testing {
+                    driverClassName = &quot;org.postgresql.Driver&quot;
+                    url = &quot;jdbc:postgresql://invest-testing-invest-testing-1.ds.pg-test.tcsbank.ru:5432/invest_testing?ApplicationName=invest-testing-api&quot;
+                    username = ${TESTING_API_USER}
+                    password = ${TESTING_API_PASSWORD}
+                    connectionTimeout = 10000
+                    maxPoolSize = 1
+                    }
+
+                    rest {
+                    account {
+                    url = &quot;http://invest-qa.tinkoff.ru/account/public/v1&quot;
+                    retryPolicy {
+                    delaySeconds = 1
+                    retryCount = 3
+                    }
+                    }
+                    confidantPoa {
+                    url = &quot;https://invest-qa.tinkoff.ru/confidant/poa/v1&quot;
+                    retryPolicy {
+                    delaySeconds = 1
+                    retryCount = 3
+                    }
+                    token = ${JWT_TOKEN}
+                    }
+                    riskProfileProcessor {
+                    url = &quot;https://invest-qa.tinkoff.ru/risk-profile/v1&quot;
+                    retryPolicy {
+                    delaySeconds = 1
+                    retryCount = 3
+                    }
+                    token = ${JWT_TOKEN}
+                    }
+                    }
+
+                    cache {
+                    investIdBySiebel = &quot;maximumSize=1000,expireAfterWrite=10m,recordStats&quot;
+                    questionsByTestIdCache = &quot;maximumSize=10,expireAfterWrite=1m,recordStats,softValues&quot;
+                    investTypeByInvestIdCache = &quot;maximumSize=1000,expireAfterWrite=1m,recordStats&quot;
+                    }
+
+                    questionSection {
+                    self {
+                    random = false
+                    position = 2
+                    title = &quot;Самооценка&quot;
+                    calculation = false
+                    }
+                    lore {
+                    random = true
+                    position = 1
+                    title = &quot;Знания&quot;
+                    calculation = true
+                    }
+                    riskProfile {
+                    random = false
+                    position = 3
+                    title = &quot;Риск-профиль&quot;
+                    calculation = true
+                    }
+                    }
+
+                    logic {
+                    countAnswer = 4
+                    allowType = [
+                    {
+                    platform = &quot;android&quot;
+                    appVersion = &quot;5.4.0&quot;
+                    type = &quot;option&quot;
+                    },
+                    {
+                    platform = &quot;android&quot;
+                    appVersion = &quot;5.4.0&quot;
+                    # russian_bonds_foreign_law это money_secured_bonds https://jira3.tcsbank.ru/browse/ISELF-1448
+                    type = &quot;russian_bonds_foreign_law&quot;
+                    }
+                    ]
+                    }
+
+                    testDescription {
+                    not_qualified_test {
+                    label = &quot;Чтобы торговать высокодоходными бумагами, нужно пройти тест. Это требование законодательства&quot;
+                    description = &quot;Ответьте на несколько вопросов в 2 блоках: «Знания» и «Самооценка»&quot;
+                    remark = &quot;Вопросы блока «Самооценка» не влияют на общий результат&quot;
+                    }
+                    crypto_test {
+                    label = &quot;Чтобы торговать криптовалютами, нужно пройти тест. Это требование законодательства&quot;
+                    description = &quot;Ответьте на несколько вопросов&quot;
+                    remark = &quot;Вопросы блока «Самооценка» не влияют на общий результат&quot;
+                    }
+                    risk_profile_test {
+                    label = &quot;&quot;
+                    description = &quot;Тест для присвоения инвестиционного профиля компании. Нужен для того, чтобы аналитики могли направлять вам, согласно ваших результатов рекомендации по покупке бумаг.&quot;
+                    remark = &quot;&quot;
+                    }
+                    }
+
+                    testsConfig {
+                    derivative {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    structured_bonds {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    closed_fund {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    bond {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    structured_income_bonds {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    foreign_shares {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    foreign_etf {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    foreign_bond {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    russian_shares {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    leverage {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    option {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    non_quoted_instruments {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    convertible_bonds {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    # russian_bonds_foreign_law это money_secured_bonds https://jira3.tcsbank.ru/browse/ISELF-1448
+                    russian_bonds_foreign_law {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    foreign_bonds_russian_law {
+                    clientType = &quot;individual&quot;
+                    category = &quot;not_qualified_test&quot;
+                    }
+                    risk_profile_company {
+                    clientType = &quot;company&quot;
+                    category = &quot;risk_profile_test&quot;
+                    }
+                    crypto_blr {
+                    clientType = &quot;individual&quot;
+                    category = &quot;crypto_test&quot;
+                    }
+                    crypto_leverage {
+                    clientType = &quot;individual&quot;
+                    category = &quot;crypto_test&quot;
+                    }
+                    }
+
+                    copyResult: [{
+                    from = &quot;option&quot;
+                    to = &quot;derivative&quot;
+                    }, {
+                    from = &quot;derivative&quot;
+                    to = &quot;option&quot;
+                    }]
+
+                    testTypesForStarted: [&quot;option&quot;, &quot;derivative&quot;]
+
+                    testCategoriesForInstruments: [&quot;not_qualified_test&quot;, &quot;crypto_test&quot;]
+
+                    errors {
+                    mappings {
+                    &quot;TestAlreadyPassed&quot; {
+                    code = &quot;AlreadyPassed&quot;
+                    message = &quot;Тест уже успешно пройден&quot;
+                    }
+                    &quot;TestNotExists&quot; {
+                    code = &quot;TestNotFound&quot;
+                    message = &quot;Тест не найден&quot;
+                    }
+                    &quot;TestWithoutQuestions&quot; {
+                    code = &quot;TestHasNoQuestions&quot;
+                    message = &quot;Тест не содержит вопросов&quot;
+                    }
+                    &quot;InvestIdNotFound&quot; {
+                    code = &quot;InvestIdNotFound&quot;
+                    message = &quot;Сервис временно недоступен&quot;
+                    }
+                    &quot;ConfidantForbidden&quot; {
+                    code = &quot;ConfidantForbidden&quot;
+                    message = &quot;Недостаточно доступов для данной операции. У вас не хватает прав, выданных доверителем, или данная операция невозможна&quot;
+                    }
+                    &quot;LoreQuestionsNotFound&quot; {
+                    code = &quot;LoreQuestionsNotFound&quot;
+                    message = &quot;Сервис временно недоступен&quot;
+                    }
+                    &quot;TestNotFound&quot; {
+                    code = &quot;TestNotFound&quot;
+                    message = &quot;Сервис временно недоступен&quot;
+                    }
+                    &quot;AlreadyPassed&quot; {
+                    code = &quot;AlreadyPassed&quot;
+                    message = &quot;Клиент уже успешно прошёл тест&quot;
+                    }
+                    }
+                    }
+
+                    sentry {
+                    dsn = ${ERROR_HUB_DSN}
+                    environment = QA
+                    release = &quot;testing.api.&quot;${RELEASE_BRANCH}
+                    serviceName = &quot;invest-testing-api&quot;
+                    }
+
+                    cors {
+                    allowedMethods = [&quot;POST&quot;, &quot;GET&quot;, &quot;OPTIONS&quot;]
+                    allowedHeaders = [&quot;X-APP-NAME&quot;, &quot;X-APP-VERSION&quot;, &quot;X-PLATFORM&quot;, &quot;X-TCS-SIEBEL-ID&quot;, &quot;X-DEVICE-ID&quot;, &quot;X-B3-TRACEID&quot;, &quot;X-B3-SPANID&quot;, &quot;X-TCS-PRINCIPAL-SIEBEL-ID&quot;]
+                    allowedHosts = [
+                    &quot;https://www-f1.tinkoff.ru&quot;,
+                    &quot;https://www-f2.tinkoff.ru&quot;,
+                    &quot;https://www-f3.tinkoff.ru&quot;,
+                    &quot;https://www-test.tinkoff.ru&quot;,
+                    &quot;https://www-test-stable.tinkoff.ru&quot;,
+                    &quot;http://localhost:3000&quot;,
+                    &quot;http://localhost:8080&quot;,
+                    &quot;https://invest-qa.tinkoff.ru&quot;,
+                    &quot;https://business-qa2.tcsbank.ru&quot;,
+                    &quot;https://www-f1.tbank.ru&quot;,
+                    &quot;https://www-f2.tbank.ru&quot;,
+                    &quot;https://www-f3.tbank.ru&quot;,
+                    &quot;https://www-test.tbank.ru&quot;,
+                    &quot;https://www-test-stable.tbank.ru&quot;,
+                    &quot;https://business-qa2.tbank.ru&quot;,
+                    ]
+                    allowCredentials = true
+                    }
+
+                    categoryMapping {
+                    category {
+                    1 {
+                    quantity = 1
+                    }
+                    2 {
+                    quantity = 2
+                    }
+                    3 {
+                    quantity = 1
+                    }
+                    }
+                    }
+                    }
+
+                    kafka {
+                    clusters {
+                    kaasInvest {
+                    producer {
+                    config {
+                    servers = [
+                    &quot;test-kaas-invest-cluster-common-name.test.strp.tcsbank.ru:9093&quot;,
+                    ]
+                    requestTimeout = &quot;2s&quot;
+                    securityProtocol = &quot;SASL_SSL&quot;
+                    saslConfig {
+                    mechanism = &quot;SCRAM-SHA-512&quot;
+                    jaasConfig = &quot;org.apache.kafka.common.security.scram.ScramLoginModule required username=\&quot;&quot;${KAAS_USER}&quot;\&quot; password=\&quot;&quot;${KAAS_PASSWORD}&quot;\&quot;;&quot;
+                    }
+                    }
+                    topics {
+                    investTestingNotificationRaw = &quot;invest-testing.testing.notification.raw&quot;
+                    investTestingAttemptQueue = &quot;invest-testing.testing.attempt.queue&quot;
+                    investTestingTestStarted = &quot;invest-testing.testing.test.started&quot;
+                    }
+                    }
+                    }
+                    }
+                    }
+
+                    tracing {
+                    exporter {
+                    endpoint = &quot;https://collector.dtracing.dev.t-tech.team&quot;
+                    maxExportBatchSize = 1
+                    exportTimeout = 5000
+                    }
+                    attributes {
+                    &quot;service.name&quot; = &quot;testing-api&quot;
+                    &quot;service.namespace&quot; = &quot;invest-testing&quot;
+                    &quot;deployment.environment&quot; = &quot;qa&quot;
+                    }
+                    }
+                </content>
+            </application.conf>
+            <CalculateResultOperation.kt>
+                <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/logic/operation/CalculateResultOperation.kt</path>
+                <content>package ru.tinkoff.invest.testing.api.logic.operation
+
+                    import ru.tinkoff.invest.kutils.database.types.jooq.TxManager
+                    import ru.tinkoff.invest.kutils.errors.functions.throwsBusinessException
+                    import ru.tinkoff.invest.kutils.kapi.extensions.putMdc
+                    import ru.tinkoff.invest.testing.api.builder.dao.serializeDwhBody
+                    import ru.tinkoff.invest.testing.api.configuration.CacheManager
+                    import ru.tinkoff.invest.testing.api.configuration.CopyResultParams
+                    import ru.tinkoff.invest.testing.api.configuration.SectionParams
+                    import ru.tinkoff.invest.testing.api.configuration.TotalQuantity
+                    import ru.tinkoff.invest.testing.api.dto.dao.TestAttrsDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.sdp.DwhDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.sdp.ResultDwhDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.sdp.ResultQuestionsDwhDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.sdp.enums.SdpOperation
+                    import ru.tinkoff.invest.testing.api.dto.enums.QuestionSection
+                    import ru.tinkoff.invest.testing.api.error.exception.BusinessExceptionCode
+                    import ru.tinkoff.invest.testing.api.helper.BusinessWrapper
+                    import ru.tinkoff.invest.testing.api.helper.nullableInvalidateCache
+                    import ru.tinkoff.invest.testing.api.integration.http.AccountClientAdapter
+                    import ru.tinkoff.invest.testing.api.integration.kafka.KafkaClientAdapter
+                    import ru.tinkoff.invest.testing.api.integration.testing.TestingDaoAdapter
+                    import ru.tinkoff.invest.testing.api.logic.service.TestChecker
+                    import ru.tinkoff.invest.testing.api.model.CalculateResultRequest
+                    import ru.tinkoff.invest.testing.api.model.CalculateResultResponse
+                    import ru.tinkoff.invest.testing.api.model.CalculateResultResponseResult
+                    import ru.tinkoff.invest.testing.api.model.WrongQuestion
+                    import ru.tinkoff.invest.testing.notification.event.TestingNotificationEvent.Event.Success
+                    import ru.tinkoff.kraken.Tags
+                    import java.time.LocalDateTime
+                    import java.util.UUID
+
+                    class CalculateResultOperation(
+                    private val testingDaoAdapter: TestingDaoAdapter,
+                    private val accountClientAdapter: AccountClientAdapter,
+                    private val kafkaClientAdapter: KafkaClientAdapter,
+                    private val questionSection: Map&lt;QuestionSection, SectionParams&gt;,
+                    private val testChecker: TestChecker,
+                    private val txManager: TxManager,
+                    private val cacheManager: CacheManager,
+                    private val copyParams: List&lt;CopyResultParams&gt;,
+                    @Tags(TotalQuantity::class) private val totalQuantityNonQualified: Int,
+                    ) {
+                    private val wrapper = BusinessWrapper()
+
+                    suspend fun invoke(request: CalculateResultRequest, siebelId: String): CalculateResultResponse = wrapper.wrap {
+                    val (_, type, score) = testingDaoAdapter.getTestAttrs(request.testId)
+                    ?: throwsBusinessException(BusinessExceptionCode.TEST_NOT_EXISTS)
+
+                    if (!testChecker.isInCategoriesForInstruments(type)) {
+                    throwsBusinessException(BusinessExceptionCode.TEST_NOT_EXISTS)
+                    }
+
+                    val investId = cacheManager.investIdBySiebelCache.makeFunction(
+                    accountClientAdapter::getInvestId,
+                    nullableInvalidateCache(),
+                    ).invoke(siebelId) ?: throwsBusinessException(
+                    exceptionCode = BusinessExceptionCode.INVEST_ID_NOT_FOUND,
+                    message = &quot;siebelId = $siebelId&quot;,
+                    )
+                    investId.putMdc(&quot;investId&quot;)
+
+                    if (testingDaoAdapter.isTestPassed(investId, request.testId)) {
+                    throwsBusinessException(BusinessExceptionCode.TEST_ALREADY_PASSED)
+                    }
+
+                    val copyToTests = copyParams
+                    .filter { it.from == type }
+                    .mapNotNull {
+                    testingDaoAdapter.getTestAttrs(it.to)
+                    }
+
+                    val calculableSections = questionSection.filterValues { it.calculation }.map { (key, _) -&gt; key.value }
+                    val totalQuantity = when {
+                    testChecker.isNonQualifiedTestCategory(type) -&gt; totalQuantityNonQualified
+                    testChecker.isCryptoTestCategory(type) -&gt; testingDaoAdapter.getCountLoreQuestionsByTestId(request.testId)
+                    else -&gt; throwsBusinessException(BusinessExceptionCode.TEST_NOT_EXISTS)
+                    }
+
+                    val (calculableQuestions, nonCalculableQuestions) = testingDaoAdapter.getQuestionsByIdsInSections(
+                    request.questions.map { it.id },
+                    calculableSections,
+                    ).partition { dbQuestion -&gt;
+                    dbQuestion.countCorrect == request.questions.first { it.id == dbQuestion.id }.answers.size
+                    }
+
+                    val clientCalculableAnswers = request.questions
+                    .filter { question -&gt; question.id in calculableQuestions.map { it.id } }
+                    .flatMap { question -&gt; question.answers }
+
+                    val wrongQuestions: MutableList&lt;WrongQuestion&gt; =
+                    nonCalculableQuestions.map { WrongQuestion(it.id, it.title) }.toMutableList()
+                    val clientScore = if (clientCalculableAnswers.isNotEmpty()) {
+                    val correctAnswersCountByIds = testingDaoAdapter.getCorrectAnswersCountByIds(clientCalculableAnswers)
+
+                    calculableQuestions.fold(0) { clientScore, question -&gt;
+                    if (correctAnswersCountByIds.any { correctAnswers -&gt;
+                    question.id == correctAnswers.questionId &amp;&amp; question.countCorrect == correctAnswers.countCorrect
+                    }
+                    ) {
+                    clientScore + question.score
+                    } else {
+                    wrongQuestions.add(WrongQuestion(question.id, question.title))
+                    clientScore
+                    }
+                    }
+                    } else {
+                    0
+                    }
+
+                    val successfully = clientScore &gt;= score
+
+                    val resultId = createResult(investId, request, successfully, clientScore, copyToTests)
+
+                    val result = if (successfully) {
+                    kafkaClientAdapter.sendTestingNotificationEvent(investId, type, Success.TRUE)
+                    copyToTests.forEach { test -&gt;
+                    kafkaClientAdapter.sendTestingNotificationEvent(
+                    investId,
+                    test.type,
+                    Success.TRUE,
+                    )
+                    }
+                    null
+                    } else {
+                    CalculateResultResponseResult(totalQuantityNonQualified, totalQuantityNonQualified - wrongQuestions.size, wrongQuestions)
+                    }
+
+                    kafkaClientAdapter.sendAttemptEvent(investId, request.testId, resultId)
+
+                    CalculateResultResponse(successfully, result)
+                    }
+
+                    private suspend fun createResult(
+                    investId: UUID,
+                    request: CalculateResultRequest,
+                    successfully: Boolean,
+                    clientScore: Int,
+                    copyToTests: List&lt;TestAttrsDto&gt;,
+                    ): UUID = txManager.transactionResult { txContext -&gt;
+                    val resultId = UUID.randomUUID()
+                    val sdpEvents = mutableListOf&lt;Pair&lt;DwhDto, SdpOperation&gt;&gt;()
+                    testingDaoAdapter.createResult(txContext, resultId, investId, request.testId, successfully, clientScore).run {
+                    sdpEvents.add(
+                    Pair(
+                    ResultDwhDto(resultId, successfully, request.testId, investId, LocalDateTime.now()),
+                    SdpOperation.INSERT,
+                    ),
+                    )
+                    }
+                    if (successfully) {
+                    copyToTests.forEach { test -&gt;
+                    val id = UUID.randomUUID()
+                    testingDaoAdapter.createResult(
+                    txContext = txContext,
+                    id = id,
+                    investId = investId,
+                    testId = test.id,
+                    successfully = successfully,
+                    score = test.score,
+                    ).run {
+                    sdpEvents.add(
+                    Pair(
+                    ResultDwhDto(id, successfully, test.id, investId, LocalDateTime.now()),
+                    SdpOperation.INSERT,
+                    ),
+                    )
+                    }
+                    }
+                    }
+
+                    val requestQuestions = request.questions.flatMap { question -&gt;
+                    question.answers.map { answer -&gt;
+                    Triple(UUID.randomUUID(), question.id, answer)
+                    }
+                    }
+
+                    val ids = requestQuestions.map { it.first }
+                    val questionIds = requestQuestions.map { it.second }
+                    val answerIds = requestQuestions.map { it.third }
+
+                    testingDaoAdapter.createResultQuestion(txContext, resultId, ids, questionIds, answerIds)
+                    sdpEvents.add(Pair(ResultQuestionsDwhDto(resultId, ids, questionIds, answerIds), SdpOperation.INSERT))
+                    testingDaoAdapter.insertSdpEvents(txContext, sdpEvents.serializeDwhBody())
+                    resultId
+                    }
+                    }
+                </content>
+            </CalculateResultOperation.kt>
+            <TestChecker.kt>
+                <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/logic/service/TestChecker.kt</path>
+                <content>package ru.tinkoff.invest.testing.api.logic.service
+
+                    import ru.tinkoff.invest.testing.api.dto.common.TestConfig
+                    import ru.tinkoff.invest.testing.api.dto.enums.Category
+                    import ru.tinkoff.invest.testing.api.dto.enums.TestTypes
+
+                    class TestChecker(
+                    private val config: Map&lt;TestTypes, TestConfig&gt;,
+                    private val testCategoriesForInstruments: List&lt;Category&gt;
+                    ) {
+
+                    fun isNonQualifiedTestCategory(testType: TestTypes): Boolean =
+                    config[testType]?.category == Category.NOT_QUALIFIED_TEST
+
+                    fun isInCategoriesForInstruments(testType: TestTypes): Boolean =
+                    config[testType]?.category in testCategoriesForInstruments
+
+                    fun isCryptoTestCategory(testType: TestTypes): Boolean =
+                    config[testType]?.category == Category.CRYPTO_TEST
+                    }
+                </content>
+            </TestChecker.kt>
+            <TestingDaoAdapter.kt>
+                <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/integration/testing/TestingDaoAdapter.kt</path>
+                <content>package ru.tinkoff.invest.testing.api.integration.testing
+
+                    import org.jooq.DSLContext
+                    import ru.tinkoff.invest.kutils.database.extensions.toMap
+                    import ru.tinkoff.invest.kutils.database.functions.listQueryParam
+                    import ru.tinkoff.invest.kutils.database.functions.queryParam
+                    import ru.tinkoff.invest.kutils.database.types.QueryParam
+                    import ru.tinkoff.invest.kutils.database.wrapper.jooq.JooqExceptionWrapper
+                    import ru.tinkoff.invest.kutils.kapi.logging.IntegrationWrapper
+                    import ru.tinkoff.invest.kutils.metrics.DataBaseMetrics
+                    import ru.tinkoff.invest.testing.api.dto.dao.AnswerCountCorrectDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.AnswerDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.AttemptDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.GetResultTestDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.GetTestTypesDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.QuestionCountCorrectDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.QuestionDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.TestAttrsDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.TestDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.sdp.AttemptDwhDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.sdp.enums.SdpOperation
+                    import ru.tinkoff.invest.testing.api.dto.enums.TestTypes
+                    import ru.tinkoff.invest.testing.api.error.exception.InvocationExceptionCode
+                    import java.util.UUID
+
+                    class TestingDaoAdapter(
+                    private val dao: TestingDao,
+                    metrics: DataBaseMetrics,
+                    ) {
+                    private val wrapper = IntegrationWrapper.create&lt;TestingDaoAdapter&gt;(JooqExceptionWrapper, metrics, setOf(&quot;testing&quot;))
+
+                    suspend fun isTestPassedByType(investId: UUID, testType: String): Boolean {
+                    val params = setOf&lt;QueryParam&lt;*&gt;&gt;(
+                    queryParam(&quot;investId&quot;, investId),
+                    queryParam(&quot;testType&quot;, testType),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;isTestPassedByType&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_RESULT_TEST_GET,
+                    ) {
+                    dao.isTestPassedByType(params)
+                    }
+                    }
+
+                    suspend fun isTestPassed(investId: UUID, testId: UUID): Boolean {
+                    val params = setOf&lt;QueryParam&lt;*&gt;&gt;(
+                    queryParam(&quot;investId&quot;, investId),
+                    queryParam(&quot;testId&quot;, testId),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;isTestPassed&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_RESULT_GET,
+                    ) {
+                    dao.isTestPassed(params)
+                    }
+                    }
+
+                    suspend fun getTest(testType: String): TestDto? {
+                    val param = queryParam(&quot;testType&quot;, testType)
+
+                    return wrapper.wrap(
+                    point = &quot;getTest&quot;,
+                    params = mapOf(
+                    &quot;testType&quot; to testType,
+                    ),
+                    exceptionCode = InvocationExceptionCode.TESTING_TEST_GET,
+                    ) {
+                    dao.getTest(param)
+                    }
+                    }
+
+                    suspend fun getTestAttrs(testType: TestTypes): TestAttrsDto? {
+                    val param = queryParam(&quot;testType&quot;, testType.dbValue)
+
+                    return wrapper.wrap(
+                    point = &quot;getTestAttrs&quot;,
+                    exceptionCode = InvocationExceptionCode.TESTING_TEST_GET,
+                    ) {
+                    dao.getTestAttrs(param)
+                    }
+                    }
+
+                    suspend fun getTestType(id: UUID, txContext: DSLContext? = null): TestTypes? {
+                    val param = queryParam(&quot;id&quot;, id)
+
+                    return wrapper.wrap(
+                    point = &quot;getTestType&quot;,
+                    params = param.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_TEST_GET,
+                    ) {
+                    dao.getTestType(param, txContext)
+                    }
+                    }
+
+                    suspend fun getTestAttrs(id: UUID): TestAttrsDto? {
+                    val param = queryParam(&quot;id&quot;, id)
+
+                    return wrapper.wrap(
+                    point = &quot;getTestAttrs&quot;,
+                    exceptionCode = InvocationExceptionCode.TESTING_TEST_GET,
+                    ) {
+                    dao.getTestAttrs(param)
+                    }
+                    }
+
+                    suspend fun getPassedTests(investId: UUID, ignoreType: List&lt;String&gt;): List&lt;GetResultTestDto&gt; {
+                    val params = setOf(
+                    queryParam(&quot;investId&quot;, investId),
+                    listQueryParam(&quot;ignoreTypes&quot;, ignoreType),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;getPassedTests&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_RESULT_TEST_GET,
+                    ) {
+                    dao.getPassedTests(params)
+                    }
+                    }
+
+                    suspend fun getTypes(): List&lt;GetTestTypesDto&gt; {
+                    return wrapper.wrap(
+                    point = &quot;getTypes&quot;,
+                    exceptionCode = InvocationExceptionCode.TESTING_TEST_GET,
+                    ) {
+                    dao.getTypes()
+                    }
+                    }
+
+                    suspend fun getQuestions(testId: UUID): List&lt;QuestionDto&gt; {
+                    val param = queryParam(&quot;testId&quot;, testId)
+
+                    return wrapper.wrap(
+                    point = &quot;getQuestions&quot;,
+                    params = param.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_QUESTION_GET,
+                    ) {
+                    dao.getQuestions(param)
+                    }
+                    }
+
+                    suspend fun getAnswersByQuestionIds(questionIds: List&lt;UUID&gt;): List&lt;AnswerDto&gt; {
+                    val param = listQueryParam(&quot;questionIds&quot;, questionIds)
+
+                    return wrapper.wrap(
+                    point = &quot;getAnswersByQuestionIds&quot;,
+                    params = param.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_ANSWER_GET,
+                    ) {
+                    dao.getAnswersByQuestionIds(param)
+                    }
+                    }
+
+                    suspend fun getQuestionsByIdsInSections(
+                    questionIds: List&lt;UUID&gt;,
+                    sections: List&lt;String&gt;,
+                    ): List&lt;QuestionCountCorrectDto&gt; {
+                    val params = setOf(
+                    listQueryParam(&quot;questionIds&quot;, questionIds),
+                    listQueryParam(&quot;sections&quot;, sections),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;getQuestionsByIdsInSections&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_QUESTION_GET,
+                    ) {
+                    dao.getQuestionsByIdsInSections(params)
+                    }
+                    }
+
+                    suspend fun getCorrectAnswersCountByIds(
+                    answerIds: List&lt;UUID&gt;,
+                    ): List&lt;AnswerCountCorrectDto&gt; {
+                    val params = setOf(
+                    listQueryParam(&quot;answerIds&quot;, answerIds),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;getCorrectAnswersCountByIds&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_ANSWER_GET,
+                    ) {
+                    dao.getCorrectAnswersCountByIds(params)
+                    }
+                    }
+
+                    suspend fun getCountLoreQuestionsByTestId(
+                    testId: UUID,
+                    ): Long = TODO()
+
+                    suspend fun createResult(
+                    txContext: DSLContext? = null,
+                    id: UUID,
+                    investId: UUID,
+                    testId: UUID,
+                    successfully: Boolean,
+                    score: Int,
+                    ): Int {
+                    val params = setOf(
+                    queryParam(&quot;id&quot;, id),
+                    queryParam(&quot;investId&quot;, investId),
+                    queryParam(&quot;testId&quot;, testId),
+                    queryParam(&quot;successfully&quot;, successfully),
+                    queryParam(&quot;score&quot;, score),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;createResult&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_RESULT_INSERT,
+                    ) {
+                    dao.createResult(txContext, params)
+                    }
+                    }
+
+                    suspend fun createResultQuestion(
+                    txContext: DSLContext,
+                    resultId: UUID,
+                    ids: List&lt;UUID&gt;,
+                    questionIds: List&lt;UUID&gt;,
+                    answerIds: List&lt;UUID&gt;,
+                    ): Int {
+                    val params = setOf(
+                    queryParam(&quot;resultId&quot;, resultId),
+                    listQueryParam(&quot;ids&quot;, ids),
+                    listQueryParam(&quot;questionIds&quot;, questionIds),
+                    listQueryParam(&quot;answerIds&quot;, answerIds),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;createResultQuestion&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_RESULT_QUESTION_INSERT,
+                    ) {
+                    dao.createResultQuestion(txContext, params)
+                    }
+                    }
+
+                    suspend fun hasSelfSectionResult(investId: UUID, testId: UUID): Boolean {
+                    val params = setOf&lt;QueryParam&lt;*&gt;&gt;(
+                    queryParam(&quot;investId&quot;, investId),
+                    queryParam(&quot;testId&quot;, testId),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;hasSelfSectionResult&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_SELF_SECTION_RESULT_GET,
+                    ) {
+                    dao.hasSelfSectionResult(params)
+                    }
+                    }
+
+                    suspend fun insertAttempt(
+                    txContext: DSLContext,
+                    investId: UUID,
+                    testId: UUID,
+                    powerAttorneyId: String?,
+                    ): UUID {
+                    val attemptId = UUID.randomUUID()
+
+                    val params = setOf(
+                    queryParam(&quot;attemptId&quot;, attemptId),
+                    queryParam(&quot;investId&quot;, investId),
+                    queryParam(&quot;testId&quot;, testId),
+                    queryParam(&quot;powerAttorneyId&quot;, powerAttorneyId),
+                    )
+
+                    wrapper.wrap(
+                    point = &quot;insertAttempt&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.ATTEMPT_UPDATE_ERROR,
+                    ) {
+                    dao.insertAttempt(txContext, params)
+                    }
+
+                    return attemptId
+                    }
+
+                    suspend fun insertAttemptAnswers(
+                    txContext: DSLContext,
+                    attemptId: UUID,
+                    answersIds: List&lt;UUID&gt;,
+                    ) {
+                    val params = setOf(
+                    queryParam(&quot;attemptId&quot;, attemptId),
+                    listQueryParam(&quot;answerIds&quot;, answersIds),
+                    )
+
+                    wrapper.wrap(
+                    point = &quot;insertAttemptAnswers&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.ATTEMPT_ANSWER_INSERT_ERROR,
+                    ) {
+                    dao.insertAttemptAnswers(txContext, params)
+                    }
+                    }
+
+                    suspend fun getAttemptAndLock(txContext: DSLContext, attemptId: UUID): AttemptDto? {
+                    val params = setOf(
+                    queryParam(&quot;attemptId&quot;, attemptId),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;getAttemptAndLock&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.ATTEMPT_SEARCH_ERROR,
+                    ) {
+                    dao.getAttemptAndLock(txContext, params)
+                    }
+                    }
+
+                    suspend fun updateAttemptResult(txContext: DSLContext, attemptId: UUID, resultId: UUID): AttemptDwhDto? {
+                    val params = setOf(
+                    queryParam(&quot;attemptId&quot;, attemptId),
+                    queryParam(&quot;resultId&quot;, resultId),
+                    )
+
+                    return wrapper.wrap(
+                    point = &quot;updateAttemptResult&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.ATTEMPT_UPDATE_ERROR,
+                    ) {
+                    dao.updateAttemptResult(txContext, params)
+                    }
+                    }
+
+                    suspend fun insertSdpEvent(txContext: DSLContext, sdpOperation: SdpOperation, body: Pair&lt;String, String&gt;) {
+                    val params = setOf(
+                    queryParam(&quot;body&quot;, body.first),
+                    queryParam(&quot;type&quot;, body.second),
+                    queryParam(&quot;sdpOperation&quot;, sdpOperation.db),
+                    )
+                    return wrapper.wrap(
+                    point = &quot;insertSdpEvent&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_INSERT_SDP_EVENT_ERROR,
+                    ) {
+                    dao.insertSdpEvent(txContext, params)
+                    }
+                    }
+
+                    suspend fun insertSdpEvents(txContext: DSLContext, bodyList: List&lt;Triple&lt;String, String, SdpOperation&gt;&gt;) {
+                    val params = setOf(
+                    listQueryParam(&quot;bodyList&quot;, bodyList.map { it.first }),
+                    listQueryParam(&quot;typeList&quot;, bodyList.map { it.second }),
+                    listQueryParam(&quot;sdpOperationList&quot;, bodyList.map { it.third.db }),
+                    )
+                    return wrapper.wrap(
+                    point = &quot;insertSdpEvents&quot;,
+                    params = params.toMap(),
+                    exceptionCode = InvocationExceptionCode.TESTING_INSERT_SDP_EVENT_ERROR,
+                    ) {
+                    dao.insertSdpEvents(txContext, params)
+                    }
+                    }
+                    }
+                </content>
+            </TestingDaoAdapter.kt>
+            <TestingDao.kt>
+                <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/integration/testing/TestingDao.kt</path>
+                <content>package ru.tinkoff.invest.testing.api.integration.testing
+
+                    import io.opentelemetry.api.trace.Tracer
+                    import org.jooq.DSLContext
+                    import org.jooq.Record
+                    import ru.tinkoff.invest.kutils.database.config.DatabaseConfig
+                    import ru.tinkoff.invest.kutils.database.extensions.jooq.boolean
+                    import ru.tinkoff.invest.kutils.database.extensions.jooq.executeQuery
+                    import ru.tinkoff.invest.kutils.database.extensions.jooq.fetchQuery
+                    import ru.tinkoff.invest.kutils.database.extensions.jooq.fetchQueryRecordOne
+                    import ru.tinkoff.invest.kutils.database.extensions.jooq.fetchQueryRecordOneOrNull
+                    import ru.tinkoff.invest.kutils.database.extensions.jooq.stringOrNull
+                    import ru.tinkoff.invest.kutils.database.functions.queryParam
+                    import ru.tinkoff.invest.kutils.database.tracing.DbTracingSettings
+                    import ru.tinkoff.invest.kutils.database.tracing.with
+                    import ru.tinkoff.invest.kutils.database.types.QueryParam
+                    import ru.tinkoff.invest.kutils.kapi.functions.traceparent
+                    import ru.tinkoff.invest.testing.api.builder.dao.toAnswerCountCorrectDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toAnswerDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toAttemptDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toAttemptDwhDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toGetResultTestDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toQuestionCountCorrectDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toQuestionDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toTestAttrsDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toTestDto
+                    import ru.tinkoff.invest.testing.api.builder.dao.toTestTypeItemDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.AnswerCountCorrectDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.AnswerDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.AttemptDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.GetResultTestDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.GetTestTypesDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.QuestionCountCorrectDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.QuestionDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.TestAttrsDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.TestDto
+                    import ru.tinkoff.invest.testing.api.dto.dao.sdp.AttemptDwhDto
+                    import ru.tinkoff.invest.testing.api.dto.enums.TestTypes
+                    import java.util.UUID
+
+                    class TestingDao(
+                    private val context: DSLContext,
+                    tracer: Tracer,
+                    dbConfig: DatabaseConfig,
+                    ) {
+                    private val dbType = &quot;postgres&quot;
+                    private val user = dbConfig.username
+                    private val connectionString = dbConfig.url
+                    private val tracing = DbTracingSettings(tracer, user, connectionString, dbType)
+
+                    suspend fun isTestPassedByType(params: Set&lt;QueryParam&lt;*&gt;&gt;): Boolean {
+                    val query = &quot;&quot;&quot;
+                    SELECT EXISTS (
+                    SELECT 1
+                    FROM testing.result r
+                    JOIN testing.test t ON (r.test_id = t.id)
+                    WHERE r.invest_id  = :investId::uuid
+                    AND r.successfully = true
+                    AND t.type = :testType::testing.test_type
+                    )
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.isTestPassedByType&quot;) {
+                    context.fetchQueryRecordOne(query, params)
+                    .map { it.boolean(&quot;exists&quot;) }
+                    }
+                    }
+
+                    suspend fun isTestPassed(params: Set&lt;QueryParam&lt;*&gt;&gt;): Boolean {
+                    val query = &quot;&quot;&quot;
+                    SELECT EXISTS (
+                    SELECT 1
+                    FROM testing.result
+                    WHERE invest_id  = :investId::uuid
+                    AND successfully = true
+                    AND test_id = :testId::uuid
+                    )
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.isTestPassed&quot;) {
+                    context.fetchQueryRecordOne(query, params)
+                    .map { it.boolean(&quot;exists&quot;) }
+                    }
+                    }
+
+                    suspend fun getTest(param: QueryParam&lt;String&gt;): TestDto? {
+                    val query = &quot;&quot;&quot;
+                    SELECT id, title, title_link, deep_link
+                    FROM testing.test
+                    WHERE deleted = false
+                    AND type = :testType::testing.test_type
+                    AND activated = true
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getTest&quot;) {
+                    context.fetchQueryRecordOneOrNull(query, param)
+                    ?.map(Record::toTestDto)
+                    }
+                    }
+
+                    suspend fun getTestAttrs(param: QueryParam&lt;UUID&gt;): TestAttrsDto? {
+                    val query = &quot;&quot;&quot;
+                    SELECT id, score, type
+                    FROM testing.test
+                    WHERE deleted = false
+                    AND id = :id
+                    AND activated = true
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getTestAttrs&quot;) {
+                    context.fetchQueryRecordOneOrNull(query, param)
+                    ?.map(Record::toTestAttrsDto)
+                    }
+                    }
+
+                    suspend fun getTestType(param: QueryParam&lt;UUID&gt;, txContext: DSLContext? = null): TestTypes? {
+                    val query = &quot;&quot;&quot;
+                    SELECT type
+                    FROM testing.test
+                    WHERE id = :id
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getTestType&quot;) {
+                    (txContext ?: context).fetchQueryRecordOneOrNull(query, param)
+                    ?.map { TestTypes.fromValue(it.stringOrNull(&quot;type&quot;)) }
+                    }
+                    }
+
+                    @JvmName(&quot;getTestAttrsByType&quot;)
+                    suspend fun getTestAttrs(param: QueryParam&lt;String&gt;): TestAttrsDto? {
+                    val query = &quot;&quot;&quot;
+                    SELECT id, score, type
+                    FROM testing.test
+                    WHERE deleted = false
+                    AND type = :testType::testing.test_type
+                    AND activated = true
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getTestAttrsByType&quot;) {
+                    context.fetchQueryRecordOneOrNull(query, param)
+                    ?.map(Record::toTestAttrsDto)
+                    }
+                    }
+
+                    suspend fun getPassedTests(params: Set&lt;QueryParam&lt;*&gt;&gt;): List&lt;GetResultTestDto&gt; {
+                    val query = &quot;&quot;&quot;
+                    SELECT *
+                    FROM (
+                    SELECT DISTINCT ON (t.type) t.title,
+                    t.type,
+                    CASE
+                    WHEN r.successfully IS null OR r.successfully = false THEN &apos;false&apos;
+                    ELSE &apos;true&apos;
+                    END AS successfully
+                    FROM testing.test t
+                    LEFT JOIN testing.result r ON t.id = r.test_id AND r.invest_id = :investId AND r.successfully = true
+                    WHERE t.type NOT IN (SELECT i.type
+                    FROM UNNEST(ARRAY[:ignoreTypes]::testing.test_type[]) as i(type))
+                    AND (
+                    t.activated = true
+                    AND t.deleted = false
+                    OR r.successfully = true
+                    )
+                    ORDER BY t.type, successfully desc) as t
+                    ORDER BY t.successfully
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getPassedTests&quot;) {
+                    context.fetchQuery(query, params).map { it.toGetResultTestDto() }
+                    }
+                    }
+
+                    suspend fun getTypes(): List&lt;GetTestTypesDto&gt; {
+                    val query = &quot;&quot;&quot;
+                    SELECT type, title
+                    FROM testing.test
+                    WHERE activated = true
+                    AND deleted = false
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getTypes&quot;) {
+                    context.fetchQuery(query).map(Record::toTestTypeItemDto)
+                    }
+                    }
+
+                    suspend fun getQuestions(param: QueryParam&lt;UUID&gt;): List&lt;QuestionDto&gt; {
+                    val query = &quot;&quot;&quot;
+                    SELECT q.id,
+                    q.title,
+                    q.hint,
+                    q.position,
+                    q.multiple,
+                    q.section,
+                    q.category,
+                    q.count_correct,
+                    c.question_id,
+                    c.answer_id
+                    FROM testing.question q
+                    LEFT JOIN testing.condition c ON (q.condition_id = c.id)
+                    WHERE q.test_id = :testId
+                    AND q.deleted = false
+                    AND EXISTS (SELECT 1
+                    FROM testing.answer a
+                    WHERE a.question_id = q.id
+                    AND a.deleted = false)
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getQuestions&quot;) {
+                    context.fetchQuery(query, param)
+                    .map { it.toQuestionDto() }
+                    }
+                    }
+
+                    suspend fun getAnswersByQuestionIds(param: QueryParam&lt;*&gt;): List&lt;AnswerDto&gt; {
+                    val query = &quot;&quot;&quot;
+                    SELECT id,
+                    title,
+                    correct,
+                    required,
+                    question_id,
+                    position
+                    FROM testing.answer
+                    WHERE question_id IN (SELECT t.questionId
+                    FROM unnest(ARRAY[:questionIds]) AS t(questionId))
+                    AND deleted = false
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getAnswersByQuestionIds&quot;) {
+                    context.fetchQuery(query, param)
+                    .map { it.toAnswerDto() }
+                    }
+                    }
+
+                    suspend fun getQuestionsByIdsInSections(
+                    params: Set&lt;QueryParam&lt;*&gt;&gt;,
+                    ): List&lt;QuestionCountCorrectDto&gt; {
+                    val query = &quot;&quot;&quot;
+                    SELECT id,
+                    count_correct,
+                    score,
+                    title
+                    FROM testing.question
+                    WHERE id IN (SELECT t.questionId
+                    FROM unnest(ARRAY[:questionIds]) AS t(questionId))
+                    AND section IN (SELECT t.section
+                    FROM unnest(ARRAY[:sections::testing.question_section]) AS t(section))
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getQuestionsByIdsInSections&quot;) {
+                    context.fetchQuery(query, params)
+                    .map { it.toQuestionCountCorrectDto() }
+                    }
+                    }
+
+                    suspend fun getCorrectAnswersCountByIds(
+                    params: Set&lt;QueryParam&lt;*&gt;&gt;,
+                    ): List&lt;AnswerCountCorrectDto&gt; {
+                    val query = &quot;&quot;&quot;
+                    SELECT question_id,
+                    count(*) AS count_correct
+                    FROM testing.answer
+                    WHERE id IN (SELECT t.answerId
+                    FROM unnest(ARRAY[:answerIds]) AS t(answerId))
+                    AND correct = true
+                    GROUP BY question_id
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getCorrectAnswersCountByIds&quot;) {
+                    context.fetchQuery(query, params)
+                    .map { it.toAnswerCountCorrectDto() }
+                    }
+                    }
+
+                    suspend fun createResult(txContext: DSLContext? = null, params: Set&lt;QueryParam&lt;*&gt;&gt;): Int {
+                    val query = &quot;&quot;&quot;
+                    INSERT INTO testing.result (id, invest_id, test_id, successfully, score)
+                    VALUES (:id::uuid, :investId::uuid, :testId::uuid, :successfully, :score)
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.createResult&quot;) {
+                    (txContext ?: context).executeQuery(query, params)
+                    }
+                    }
+
+                    suspend fun createResultQuestion(txContext: DSLContext, params: Set&lt;QueryParam&lt;*&gt;&gt;): Int {
+                    val query = &quot;&quot;&quot;
+                    INSERT INTO testing.result_question (id, result_id, question_id, answer_id)
+                    SELECT t.id, :resultId::uuid, t.question_id, t.answer_id
+                    FROM UNNEST(ARRAY[:ids], ARRAY[:questionIds], ARRAY[:answerIds]) AS t(id, question_id, answer_id)
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.createResultQuestion&quot;) {
+                    txContext.executeQuery(query, params)
+                    }
+                    }
+
+                    suspend fun hasSelfSectionResult(params: Set&lt;QueryParam&lt;*&gt;&gt;): Boolean {
+                    val query = &quot;&quot;&quot;
+                    SELECT EXISTS (
+                    SELECT 1
+                    FROM testing.self_section_result
+                    WHERE invest_id  = :investId::uuid
+                    AND test_id = :testId::uuid
+                    )
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.hasSelfSectionResult&quot;) {
+                    context.fetchQueryRecordOne(query, params)
+                    .map { it.boolean(&quot;exists&quot;) }
+                    }
+                    }
+
+                    suspend fun insertAttempt(txContext: DSLContext, params: Set&lt;QueryParam&lt;*&gt;&gt;): Int {
+                    val query = &quot;&quot;&quot;
+                    INSERT INTO testing.attempt(id, invest_id, test_id, power_attorney_id)
+                    VALUES (:attemptId, :investId, :testId, :powerAttorneyId)
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.insertAttempt&quot;) {
+                    txContext.executeQuery(query, params)
+                    }
+                    }
+
+                    suspend fun insertAttemptAnswers(txContext: DSLContext, params: Set&lt;QueryParam&lt;*&gt;&gt;): Int {
+                    val query = &quot;&quot;&quot;
+                    INSERT INTO testing.attempt_answer(attempt_id, answer_id)
+                    SELECT :attemptId, t.answerId
+                    FROM unnest(ARRAY[:answerIds]) AS t(answerId)
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.insertAttemptAnswers&quot;) {
+                    txContext.executeQuery(query, params)
+                    }
+                    }
+
+                    suspend fun getAttemptAndLock(txContext: DSLContext, params: Set&lt;QueryParam&lt;*&gt;&gt;): AttemptDto? {
+                    val query = &quot;&quot;&quot;
+                    SELECT a.invest_id, a.test_id, a.result_id
+                    FROM testing.attempt a
+                    WHERE a.id = :attemptId::uuid
+                    FOR NO KEY UPDATE
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.getAttempt&quot;) {
+                    txContext.fetchQueryRecordOneOrNull(query, params)?.map { it.toAttemptDto() }
+                    }
+                    }
+
+                    suspend fun updateAttemptResult(txContext: DSLContext, params: Set&lt;QueryParam&lt;*&gt;&gt;): AttemptDwhDto? {
+                    val query = &quot;&quot;&quot;
+                    UPDATE testing.attempt
+                    SET result_id = :resultId::uuid
+                    WHERE id = :attemptId::uuid
+                    RETURNING id, invest_id, test_id, created_at, result_id
+                    &quot;&quot;&quot;.trimIndent()
+
+                    return tracing.with(query, &quot;dbTesting.updateAttemptResult&quot;) {
+                    txContext.fetchQueryRecordOneOrNull(query, params)?.map { it.toAttemptDwhDto() }
+                    }
+                    }
+
+                    suspend fun insertSdpEvent(txContext: DSLContext, params: Set&lt;QueryParam&lt;*&gt;&gt;) {
+                    val query = &quot;&quot;&quot;
+                    INSERT INTO testing.sdp_event (body, status, operation, type, traceparent)
+                    VALUES(:body::jsonb, &apos;wait&apos;::testing.event_status, :sdpOperation::testing.sdp_operation,
+                    :type::testing.sdp_event_type, :traceparent)
+                    &quot;&quot;&quot;.trimIndent()
+                    return tracing.with(query, &quot;db.insertSdpEvent&quot;) {
+                    txContext.executeQuery(query, (params + queryParam(&quot;traceparent&quot;, traceparent())))
+                    }
+                    }
+
+                    suspend fun insertSdpEvents(txContext: DSLContext, params: Set&lt;QueryParam&lt;*&gt;&gt;) {
+                    val query = &quot;&quot;&quot;
+                    INSERT INTO testing.sdp_event (body, status, operation, type, traceparent)
+                    SELECT t.body, &apos;wait&apos;::testing.event_status, t.sdpOperation::testing.sdp_operation, t.eventType::testing.sdp_event_type, :traceparent
+                    FROM unnest(ARRAY[:bodyList]::json[], ARRAY[:typeList], ARRAY[:sdpOperationList]) AS t(body, eventType, sdpOperation)
+                    &quot;&quot;&quot;.trimIndent()
+                    return tracing.with(query, &quot;db.insertSdpEvents&quot;) {
+                    txContext.executeQuery(query, (params + queryParam(&quot;traceparent&quot;, traceparent())))
+                    }
+                    }
+                    }
+                </content>
+            </TestingDao.kt>
+            <ConfigurationModule.kt>
+                <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/configuration/ConfigurationModule.kt</path>
+                <content>package ru.tinkoff.invest.testing.api.configuration
+
+                    import com.typesafe.config.Config
+                    import io.github.config4k.extract
+                    import ru.tinkoff.invest.kutils.database.config.DatabaseConfig
+                    import ru.tinkoff.invest.kutils.errors.config.ChatAlertsMappingConfig
+                    import ru.tinkoff.invest.kutils.errors.mapping.ConfigChatAlert
+                    import ru.tinkoff.invest.kutils.kafka.config.KafkaConfigModule
+                    import ru.tinkoff.invest.testing.api.dto.common.TestConfig
+                    import ru.tinkoff.invest.testing.api.dto.enums.Category
+                    import ru.tinkoff.invest.testing.api.dto.enums.ClientType
+                    import ru.tinkoff.invest.testing.api.dto.enums.QuestionSection
+                    import ru.tinkoff.invest.testing.api.dto.enums.TestTypes
+                    import ru.tinkoff.invest.testing.api.error.exception.BusinessExceptionCode
+                    import ru.tinkoff.kraken.Tags
+                    import ru.tinkoff.kraken.typesafe.config.TypesafeConfigModule
+
+                    interface TotalQuantity
+
+                    interface ConfigurationModule : TypesafeConfigModule.FileWatchBased, KafkaConfigModule {
+                    fun configuration(config: Config): ApplicationConfiguration = config.extract(&quot;application&quot;)
+
+                    fun testingDbConfiguration(config: ApplicationConfiguration): DatabaseConfig = config.testing
+
+                    fun restConfiguration(config: ApplicationConfiguration): RestConfiguration = config.rest
+
+                    fun questionSectionConfig(config: ApplicationConfiguration): Map&lt;QuestionSection, SectionParams&gt; =
+                    mapOf(
+                    QuestionSection.SELF to config.questionSection.self,
+                    QuestionSection.LORE to config.questionSection.lore,
+                    )
+
+                    fun copyResultConfig(config: ApplicationConfiguration): List&lt;CopyResultParams&gt; =
+                    config.copyResult.map {
+                    CopyResultParams(
+                    from = TestTypes.fromApiValue(it.from),
+                    to = TestTypes.fromApiValue(it.to),
+                    )
+                    }
+
+                    fun testTypesForStartedConfig(config: ApplicationConfiguration): List&lt;TestTypes&gt; =
+                    config.testTypesForStarted.map {
+                    requireNotNull(TestTypes.fromValue(it)) { &quot;Для типа теста $it не найдено соответствие в коде&quot; }
+                    }
+
+                    fun testCategoriesForInstruments(config: ApplicationConfiguration): List&lt;Category&gt; =
+                    config.testCategoriesForInstruments.map { Category.fromValue(it) }
+
+                    fun testsConfig(config: ApplicationConfiguration): Map&lt;TestTypes, TestConfig&gt; =
+                    config.testsConfig.map { (k, v) -&gt;
+                    val type = TestTypes.fromApiValue(k)
+                    val testConfig = TestConfig(
+                    clientType = ClientType.valueOf(v.clientType.uppercase()),
+                    category = Category.valueOf(v.category.uppercase()),
+                    )
+                    type to testConfig
+                    }.toMap()
+
+                    fun testDescription(config: ApplicationConfiguration): Map&lt;Category, TestDescriptionConfiguration&gt; =
+                    config.testDescription.mapKeys { (k, _) -&gt;
+                    Category.valueOf(k.uppercase())
+                    }
+
+                    fun logicConfig(config: ApplicationConfiguration): LogicConfig {
+                    return config.logic
+                    }
+
+                    fun errorsConfig(config: ApplicationConfiguration) = config.errors
+
+                    fun sentryConfig(config: ApplicationConfiguration) = config.sentry
+
+                    fun corsConfig(config: ApplicationConfiguration) = config.cors
+
+                    fun openApiConfig(config: ApplicationConfiguration) = config.openApi
+
+                    fun cacheConfig(config: ApplicationConfiguration) = config.cache
+
+                    fun categoryMapping(config: ApplicationConfiguration) = config.categoryMapping
+
+                    @Tags(TotalQuantity::class)
+                    fun totalQuantity(config: ApplicationConfiguration): Int = config.categoryMapping.category.values.sumOf {
+                    it.quantity
+                    }
+
+                    fun chatAlertsConfig() = run {
+                    ChatAlertsMappingConfig(
+                    BusinessExceptionCode.values().filter { it.needAlert }.associate {
+                    it.stringCode to ConfigChatAlert(BusinessExceptionCode.alertName, it.message, it.stringCode)
+                    },
+                    )
+                    }
+                    }
+                </content>
+            </ConfigurationModule.kt>
+            <ApplicationConfiguration.kt>
+                <path>/home/a.alenushka/work/invest-testing/api/src/main/kotlin/ru/tinkoff/invest/testing/api/configuration/ApplicationConfiguration.kt</path>
+                <content>package ru.tinkoff.invest.testing.api.configuration
+
+                    import ru.tinkoff.invest.kutils.common.config.RestClientConfig
+                    import ru.tinkoff.invest.kutils.database.config.DatabaseConfig
+                    import ru.tinkoff.invest.kutils.errors.config.ErrorsMappingConfig
+                    import ru.tinkoff.invest.kutils.kapi.config.OpenApiConfiguration
+                    import ru.tinkoff.invest.kutils.sentry.config.SentryConfig
+                    import ru.tinkoff.invest.testing.api.dto.enums.TestTypes
+                    import ru.tinkoff.kraken.undertow.CorsConfig
+
+                    data class ApplicationConfiguration(
+                    val sentry: SentryConfig?,
+                    val testing: DatabaseConfig,
+                    val cache: CacheConfig,
+                    val rest: RestConfiguration,
+                    val questionSection: QuestionSectionConfig,
+                    val testDescription: Map&lt;String, TestDescriptionConfiguration&gt;,
+                    val logic: LogicConfig,
+                    val errors: ErrorsMappingConfig,
+                    val cors: CorsConfig,
+                    val openApi: OpenApiConfiguration?,
+                    val copyResult: List&lt;CopyResultParamsRaw&gt;,
+                    val categoryMapping: CategoryMapping,
+                    val testTypesForStarted: List&lt;String&gt; = emptyList(),
+                    val testCategoriesForInstruments: List&lt;String&gt;,
+                    val testsConfig: Map&lt;String, TestConfigMapping&gt;,
+                    )
+
+                    data class CopyResultParamsRaw(
+                    val from: String,
+                    val to: String,
+                    )
+
+                    data class TestConfigMapping(
+                    val clientType: String,
+                    val category: String,
+                    )
+
+                    data class CopyResultParams(
+                    val from: TestTypes,
+                    val to: TestTypes,
+                    )
+
+                    data class RestConfiguration(
+                    val account: RestClientConfig,
+                    val confidantPoa: RestClientConfig,
+                    val riskProfileProcessor: RestClientConfig,
+                    )
+
+                    data class QuestionSectionConfig(
+                    val self: SectionParams,
+                    val lore: SectionParams,
+                    val riskProfile: SectionParams,
+                    )
+
+                    data class SectionParams(
+                    val random: Boolean,
+                    val position: Int,
+                    val title: String,
+                    val calculation: Boolean,
+                    )
+
+                    data class TestDescriptionConfiguration(
+                    val label: String,
+                    val description: String,
+                    val remark: String,
+                    )
+
+                    data class LogicConfig(
+                    val countAnswer: Int,
+                    val allowType: List&lt;AllowItem&gt; = emptyList(),
+                    )
+
+                    data class AllowItem(
+                    val platform: String,
+                    val appVersion: String,
+                    val type: String,
+                    )
+
+                    data class CacheConfig(
+                    val investIdBySiebel: String,
+                    val questionsByTestIdCache: String,
+                    val investTypeByInvestIdCache: String,
+                    )
+
+                    data class CategoryMapping(
+                    val category: Map&lt;String, Category&gt;,
+                    )
+
+                    data class Category(
+                    val quantity: Int,
+                    )
+                </content>
+            </ApplicationConfiguration.kt>
+        </sourceCode>
+    </now>
+</prompt>
