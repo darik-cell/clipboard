@@ -3635,4 +3635,62 @@
             </ApplicationConfiguration.kt>
         </sourceCode>
     </now>
+    <sourceCode>
+        <CalculateResultRequest.kt>
+            <path>/home/a.alenushka/work/invest-testing/api/build/generated/source/openapi/src/main/kotlin/ru/tinkoff/invest/testing/api/model/CalculateResultRequest.kt</path>
+            <content>package ru.tinkoff.invest.testing.api.model
+
+                data class CalculateResultRequest(
+                val testId: java.util.UUID,
+                val questions: List&lt;CalculateResultRequestQuestions&gt;
+                )
+
+            </content>
+        </CalculateResultRequest.kt>
+        <CalculateResultRequestQuestions.kt>
+            <path>/home/a.alenushka/work/invest-testing/api/build/generated/source/openapi/src/main/kotlin/ru/tinkoff/invest/testing/api/model/CalculateResultRequestQuestions.kt</path>
+            <content>package ru.tinkoff.invest.testing.api.model
+
+                data class CalculateResultRequestQuestions(
+                val id: java.util.UUID,
+                val answers: List&lt;java.util.UUID&gt;
+                )
+
+            </content>
+        </CalculateResultRequestQuestions.kt>
+        <CalculateResultResponse.kt>
+            <path>/home/a.alenushka/work/invest-testing/api/build/generated/source/openapi/src/main/kotlin/ru/tinkoff/invest/testing/api/model/CalculateResultResponse.kt</path>
+            <content>package ru.tinkoff.invest.testing.api.model
+
+                data class CalculateResultResponse(
+                val successfully: Boolean,
+                val result: CalculateResultResponseResult? = null
+                )
+
+            </content>
+        </CalculateResultResponse.kt>
+        <CalculateResultResponseResult.kt>
+            <path>/home/a.alenushka/work/invest-testing/api/build/generated/source/openapi/src/main/kotlin/ru/tinkoff/invest/testing/api/model/CalculateResultResponseResult.kt</path>
+            <content>package ru.tinkoff.invest.testing.api.model
+
+                data class CalculateResultResponseResult(
+                val total: Int,
+                val correct: Int,
+                val wrongQuestions: List&lt;WrongQuestion&gt;
+                )
+
+            </content>
+        </CalculateResultResponseResult.kt>
+        <WrongQuestion.kt>
+            <path>/home/a.alenushka/work/invest-testing/api/build/generated/source/openapi/src/main/kotlin/ru/tinkoff/invest/testing/api/model/WrongQuestion.kt</path>
+            <content>package ru.tinkoff.invest.testing.api.model
+
+                data class WrongQuestion(
+                val id: java.util.UUID,
+                val title: String
+                )
+
+            </content>
+        </WrongQuestion.kt>
+    </sourceCode>
 </prompt>
