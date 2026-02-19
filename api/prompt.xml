@@ -3693,4 +3693,22 @@
             </content>
         </WrongQuestion.kt>
     </sourceCode>
+    <new>
+        components.parameters:
+        TestType:
+        description: Тип Теста
+        name: type
+        in: query
+        required: true
+        schema:
+        type: string
+        enum: [ derivative, structured_bonds, closed_fund, bond, structured_income_bonds, foreign_shares, foreign_etf, foreign_bond, russian_shares, leverage, option, non_quoted_instruments, convertible_bonds, russian_bonds_foreign_law, foreign_bonds_russian_law, crypto_blr, crypto_leverage ]
+
+        components.schemas:
+        TestType:
+        description: Тип теста для неквалифицированных инвесторов
+        example: bond
+        type: string
+        enum: [derivative, structured_bonds, closed_fund, bond, structured_income_bonds, foreign_shares, foreign_etf, foreign_bond, russian_shares, leverage, option, non_quoted_instruments, convertible_bonds, russian_bonds_foreign_law, foreign_bonds_russian_law]
+    </new>
 </prompt>
