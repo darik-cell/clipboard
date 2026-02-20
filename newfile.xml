@@ -1,5 +1,6 @@
 <messages>
     <m1>
+
         ```sql
         UPDATE testing.result r
         SET successfully = false
@@ -16,70 +17,120 @@
         a.alenushka@nblx-std-cf85cd:~/work/invest-testing/admin$ ./gradlew :generateProto --info
         Initialized native services in: /home/a.alenushka/.gradle/native
         Initialized jansi services in: /home/a.alenushka/.gradle/native
-        Received JVM installation metadata from '/home/a.alenushka/.sdkman/candidates/java/21.0.9-amzn': {JAVA_HOME=/home/a.alenushka/.sdkman/candidates/java/21.0.9-amzn, JAVA_VERSION=21.0.9, JAVA_VENDOR=Amazon.com Inc., RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=21.0.9+10-LTS, VM_NAME=OpenJDK 64-Bit Server VM, VM_VERSION=21.0.9+10-LTS, VM_VENDOR=Amazon.com Inc., OS_ARCH=amd64}
-        The client will now receive all logging from the daemon (pid: 796792). The daemon log file: /home/a.alenushka/.gradle/daemon/8.0/daemon-796792.out.log
-        Starting 4th build in daemon [uptime: 22 mins 40.79 secs, performance: 100%, GC rate: 0.00/s, heap usage: 2% of 512 MiB, non-heap usage: 66% of 256 MiB]
+        Received JVM installation metadata from '/home/a.alenushka/.sdkman/candidates/java/21.0.9-amzn':
+        {JAVA_HOME=/home/a.alenushka/.sdkman/candidates/java/21.0.9-amzn, JAVA_VERSION=21.0.9, JAVA_VENDOR=Amazon.com
+        Inc., RUNTIME_NAME=OpenJDK Runtime Environment, RUNTIME_VERSION=21.0.9+10-LTS, VM_NAME=OpenJDK 64-Bit Server VM,
+        VM_VERSION=21.0.9+10-LTS, VM_VENDOR=Amazon.com Inc., OS_ARCH=amd64}
+        The client will now receive all logging from the daemon (pid: 796792). The daemon log file:
+        /home/a.alenushka/.gradle/daemon/8.0/daemon-796792.out.log
+        Starting 4th build in daemon [uptime: 22 mins 40.79 secs, performance: 100%, GC rate: 0.00/s, heap usage: 2% of
+        512 MiB, non-heap usage: 66% of 256 MiB]
         Using 12 worker leases.
         Now considering [/home/a.alenushka/work/invest-testing/admin] as hierarchies to watch
         Watching the file system is configured to be enabled if available
         File system watching is active
         Starting Build
-        The configuration classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        The configuration classpath is both resolvable and consumable. This is considered a legacy configuration and it
+        will eventually only be possible to be one of these.
+        The configuration classpath is both consumable and declarable. This combination is incorrect, only one of these
+        flags should be set.
+        The configuration classpath is both resolvable and consumable. This is considered a legacy configuration and it
+        will eventually only be possible to be one of these.
+        The configuration classpath is both consumable and declarable. This combination is incorrect, only one of these
+        flags should be set.
         Settings evaluated using settings file '/home/a.alenushka/work/invest-testing/admin/settings.gradle.kts'.
-        Using local directory build cache for the root build (location = /home/a.alenushka/.gradle/caches/build-cache-1, removeUnusedEntriesAfter = 7 days).
+        Using local directory build cache for the root build (location = /home/a.alenushka/.gradle/caches/build-cache-1,
+        removeUnusedEntriesAfter = 7 days).
         Projects loaded. Root project using build file '/home/a.alenushka/work/invest-testing/admin/build.gradle.kts'.
         Included projects: [root project 'invest-testing-admin']
 
         > Configure project :
-        Evaluating root project 'invest-testing-admin' using build file '/home/a.alenushka/work/invest-testing/admin/build.gradle.kts'.
-        The configuration detachedConfiguration1 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration detachedConfiguration1 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration detachedConfiguration1 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration detachedConfiguration1 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration detachedConfiguration2 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration detachedConfiguration2 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration detachedConfiguration2 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration detachedConfiguration2 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration detachedConfiguration3 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration detachedConfiguration3 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration detachedConfiguration3 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration detachedConfiguration3 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration detachedConfiguration4 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration detachedConfiguration4 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration detachedConfiguration4 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration detachedConfiguration4 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration detachedConfiguration5 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration detachedConfiguration5 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration detachedConfiguration5 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration detachedConfiguration5 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration detachedConfiguration6 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration detachedConfiguration6 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration detachedConfiguration6 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration detachedConfiguration6 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration detachedConfiguration7 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration detachedConfiguration7 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration detachedConfiguration7 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration detachedConfiguration7 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration detachedConfiguration8 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration detachedConfiguration8 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration detachedConfiguration8 is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration detachedConfiguration8 is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration :classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration :classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration :classpath is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration :classpath is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        Evaluating root project 'invest-testing-admin' using build file
+        '/home/a.alenushka/work/invest-testing/admin/build.gradle.kts'.
+        The configuration detachedConfiguration1 is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration1 is both consumable and declarable. This combination is incorrect, only
+        one of these flags should be set.
+        The configuration detachedConfiguration1 is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration1 is both consumable and declarable. This combination is incorrect, only
+        one of these flags should be set.
+        The configuration detachedConfiguration2 is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration2 is both consumable and declarable. This combination is incorrect, only
+        one of these flags should be set.
+        The configuration detachedConfiguration2 is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration2 is both consumable and declarable. This combination is incorrect, only
+        one of these flags should be set.
+        The configuration detachedConfiguration3 is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration3 is both consumable and declarable. This combination is incorrect, only
+        one of these flags should be set.
+        The configuration detachedConfiguration3 is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration3 is both consumable and declarable. This combination is incorrect, only
+        one of these flags should be set.
+        The configuration detachedConfiguration4 is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration4 is both consumable and declarable. This combination is incorrect, only
+        one of these flags should be set.
+        The configuration detachedConfiguration4 is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration4 is both consumable and declarable. This combination is incorrect, only
+        one of these flags should be set.
+        The configuration detachedConfiguration5 is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration5 is both consumable and declarable. This combination is incorrect, only
+        one of these flags should be set.
+        The configuration detachedConfiguration5 is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration5 is both consumable and declarable. This combination is incorrect, only
+        one of these flags should be set.
+        The configuration detachedConfiguration6 is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration6 is both consumable and declarable. This combination is incorrect, only
+        one of these flags should be set.
+        The configuration detachedConfiguration6 is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration6 is both consumable and declarable. This combination is incorrect, only
+        one of these flags should be set.
+        The configuration detachedConfiguration7 is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration7 is both consumable and declarable. This combination is incorrect, only
+        one of these flags should be set.
+        The configuration detachedConfiguration7 is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration7 is both consumable and declarable. This combination is incorrect, only
+        one of these flags should be set.
+        The configuration detachedConfiguration8 is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration8 is both consumable and declarable. This combination is incorrect, only
+        one of these flags should be set.
+        The configuration detachedConfiguration8 is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration detachedConfiguration8 is both consumable and declarable. This combination is incorrect, only
+        one of these flags should be set.
+        The configuration :classpath is both resolvable and consumable. This is considered a legacy configuration and it
+        will eventually only be possible to be one of these.
+        The configuration :classpath is both consumable and declarable. This combination is incorrect, only one of these
+        flags should be set.
+        The configuration :classpath is both resolvable and consumable. This is considered a legacy configuration and it
+        will eventually only be possible to be one of these.
+        The configuration :classpath is both consumable and declarable. This combination is incorrect, only one of these
+        flags should be set.
         Using Kotlin Gradle Plugin gradle80 variant
         kotlin scripting plugin: created the scripting discovery configuration: kotlinScriptDef
         kotlin scripting plugin: created the scripting discovery configuration: testKotlinScriptDef
         Applying plugin 'org.barfuin.gradle.jacocolog'
-        org.barfuin.gradle.jacocolog[forAllJacocoEnabledTestTasks]: Adding test task ':test' to known test task list because it was configured.
-        org.barfuin.gradle.jacocolog[forAllReportTasks]: Adding report task ':jacocoTestReport' to known report task list.
+        org.barfuin.gradle.jacocolog[forAllJacocoEnabledTestTasks]: Adding test task ':test' to known test task list
+        because it was configured.
+        org.barfuin.gradle.jacocolog[forAllReportTasks]: Adding report task ':jacocoTestReport' to known report task
+        list.
         org.barfuin.gradle.jacocolog[configureAggregatedReportTask]: Configuring ':jacocoAggregatedReport'
         org.barfuin.gradle.jacocolog[configureAggregatedReportTask]: Adding execution data from task ':test'
-        Build cache key for Kotlin DSL accessors for root project 'invest-testing-admin' is af15293e11fd5bf357d2e90c3d830a8c
+        Build cache key for Kotlin DSL accessors for root project 'invest-testing-admin' is
+        af15293e11fd5bf357d2e90c3d830a8c
         Skipping Kotlin DSL accessors for root project 'invest-testing-admin' as it is up-to-date.
         ------------------------------------------------------------------------
         Detecting the operating system and CPU architecture
@@ -100,17 +151,24 @@
         Task path ':generateProto' matched project ':'
         Task name matched 'generateProto'
         Selected primary task 'generateProto' from project :
-        The configuration :allureCopyCategoriesElements is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration :allureRawResultElements is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration :allureWorkaroundGradleBug is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        Starting process 'command '/usr/lib/jvm/openjdk-21/bin/java''. Working directory: /home/a.alenushka/.gradle/.tmp/tmp-jvm11449223715791896854probe Command: /usr/lib/jvm/openjdk-21/bin/java -cp . JavaProbe
+        The configuration :allureCopyCategoriesElements is both consumable and declarable. This combination is
+        incorrect, only one of these flags should be set.
+        The configuration :allureRawResultElements is both consumable and declarable. This combination is incorrect,
+        only one of these flags should be set.
+        The configuration :allureWorkaroundGradleBug is both consumable and declarable. This combination is incorrect,
+        only one of these flags should be set.
+        Starting process 'command '/usr/lib/jvm/openjdk-21/bin/java''. Working directory:
+        /home/a.alenushka/.gradle/.tmp/tmp-jvm11449223715791896854probe Command: /usr/lib/jvm/openjdk-21/bin/java -cp .
+        JavaProbe
         Failed to get metadata from JVM installation at '/usr/lib/jvm/openjdk-21'.
-        org.gradle.process.internal.ExecException: A problem occurred starting process 'command '/usr/lib/jvm/openjdk-21/bin/java''
+        org.gradle.process.internal.ExecException: A problem occurred starting process 'command
+        '/usr/lib/jvm/openjdk-21/bin/java''
         at org.gradle.process.internal.DefaultExecHandle.execExceptionFor(DefaultExecHandle.java:241)
         at org.gradle.process.internal.DefaultExecHandle.setEndStateInfo(DefaultExecHandle.java:218)
         at org.gradle.process.internal.DefaultExecHandle.failed(DefaultExecHandle.java:370)
         at org.gradle.process.internal.ExecHandleRunner.run(ExecHandleRunner.java:87)
-        at org.gradle.internal.operations.CurrentBuildOperationPreservingRunnable.run(CurrentBuildOperationPreservingRunnable.java:42)
+        at
+        org.gradle.internal.operations.CurrentBuildOperationPreservingRunnable.run(CurrentBuildOperationPreservingRunnable.java:42)
         at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
         at org.gradle.internal.concurrent.ManagedExecutorImpl$1.run(ManagedExecutorImpl.java:49)
         at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
@@ -122,7 +180,8 @@
         at org.gradle.process.internal.ExecHandleRunner.startProcess(ExecHandleRunner.java:98)
         at org.gradle.process.internal.ExecHandleRunner.run(ExecHandleRunner.java:71)
         ... 6 more
-        Caused by: java.io.IOException: Cannot run program "/usr/lib/jvm/openjdk-21/bin/java" (in directory "/home/a.alenushka/.gradle/.tmp/tmp-jvm11449223715791896854probe"): error=2, Нет такого файла или каталога
+        Caused by: java.io.IOException: Cannot run program "/usr/lib/jvm/openjdk-21/bin/java" (in directory
+        "/home/a.alenushka/.gradle/.tmp/tmp-jvm11449223715791896854probe"): error=2, Нет такого файла или каталога
         at java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1170)
         at java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1089)
         at net.rubygrapefruit.platform.internal.DefaultProcessLauncher.start(DefaultProcessLauncher.java:25)
@@ -133,24 +192,43 @@
         at java.base/java.lang.ProcessImpl.start(ProcessImpl.java:225)
         at java.base/java.lang.ProcessBuilder.start(ProcessBuilder.java:1126)
         ... 11 more
-        Invalid Java installation found at '/usr/lib/jvm/openjdk-21' (Common Linux Locations). It will be re-checked in the next build. This might have performance impact if it keeps failing. Run the 'javaToolchains' task for more details.
-        The configuration :coverageDataElementsForTest is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration :kotlinKaptWorkerDependencies is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration :kotlinKaptWorkerDependencies is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration :mainSourceElements is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration :protobuf is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration :protobuf is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration :protobufToolsLocator_protoc is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration :protobufToolsLocator_protoc is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration :testProtobuf is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration :testProtobuf is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        The configuration :testResultsElementsForTest is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
-        Resource missing. [HTTP GET: https://artifactory.tcsbank.ru/artifactory/maven-all/io/netty/netty-transport-native-kqueue/osx-x86_64/netty-transport-native-kqueue-osx-x86_64.pom]
-        Resource missing. [HTTP GET: https://artifactory.tcsbank.ru/artifactory/maven-releases-hosted/invest-origination/io/netty/netty-transport-native-kqueue/osx-x86_64/netty-transport-native-kqueue-osx-x86_64.pom]
-        Resource missing. [HTTP GET: https://artifactory.tcsbank.ru/artifactory/maven-all/io/netty/netty-transport-native-epoll/linux-x86_64/netty-transport-native-epoll-linux-x86_64.pom]
-        Resource missing. [HTTP GET: https://artifactory.tcsbank.ru/artifactory/maven-releases-hosted/invest-origination/io/netty/netty-transport-native-epoll/linux-x86_64/netty-transport-native-epoll-linux-x86_64.pom]
-        The configuration :protobuf is both resolvable and consumable. This is considered a legacy configuration and it will eventually only be possible to be one of these.
-        The configuration :protobuf is both consumable and declarable. This combination is incorrect, only one of these flags should be set.
+        Invalid Java installation found at '/usr/lib/jvm/openjdk-21' (Common Linux Locations). It will be re-checked in
+        the next build. This might have performance impact if it keeps failing. Run the 'javaToolchains' task for more
+        details.
+        The configuration :coverageDataElementsForTest is both consumable and declarable. This combination is incorrect,
+        only one of these flags should be set.
+        The configuration :kotlinKaptWorkerDependencies is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration :kotlinKaptWorkerDependencies is both consumable and declarable. This combination is
+        incorrect, only one of these flags should be set.
+        The configuration :mainSourceElements is both consumable and declarable. This combination is incorrect, only one
+        of these flags should be set.
+        The configuration :protobuf is both resolvable and consumable. This is considered a legacy configuration and it
+        will eventually only be possible to be one of these.
+        The configuration :protobuf is both consumable and declarable. This combination is incorrect, only one of these
+        flags should be set.
+        The configuration :protobufToolsLocator_protoc is both resolvable and consumable. This is considered a legacy
+        configuration and it will eventually only be possible to be one of these.
+        The configuration :protobufToolsLocator_protoc is both consumable and declarable. This combination is incorrect,
+        only one of these flags should be set.
+        The configuration :testProtobuf is both resolvable and consumable. This is considered a legacy configuration and
+        it will eventually only be possible to be one of these.
+        The configuration :testProtobuf is both consumable and declarable. This combination is incorrect, only one of
+        these flags should be set.
+        The configuration :testResultsElementsForTest is both consumable and declarable. This combination is incorrect,
+        only one of these flags should be set.
+        Resource missing. [HTTP GET:
+        https://artifactory.tcsbank.ru/artifactory/maven-all/io/netty/netty-transport-native-kqueue/osx-x86_64/netty-transport-native-kqueue-osx-x86_64.pom]
+        Resource missing. [HTTP GET:
+        https://artifactory.tcsbank.ru/artifactory/maven-releases-hosted/invest-origination/io/netty/netty-transport-native-kqueue/osx-x86_64/netty-transport-native-kqueue-osx-x86_64.pom]
+        Resource missing. [HTTP GET:
+        https://artifactory.tcsbank.ru/artifactory/maven-all/io/netty/netty-transport-native-epoll/linux-x86_64/netty-transport-native-epoll-linux-x86_64.pom]
+        Resource missing. [HTTP GET:
+        https://artifactory.tcsbank.ru/artifactory/maven-releases-hosted/invest-origination/io/netty/netty-transport-native-epoll/linux-x86_64/netty-transport-native-epoll-linux-x86_64.pom]
+        The configuration :protobuf is both resolvable and consumable. This is considered a legacy configuration and it
+        will eventually only be possible to be one of these.
+        The configuration :protobuf is both consumable and declarable. This combination is incorrect, only one of these
+        flags should be set.
         Tasks to be executed: [task ':extractIncludeProto', task ':extractProto', task ':generateProto']
         Tasks that were excluded: []
         Resolve mutations for :extractIncludeProto (Thread[#834,Execution worker,5,main]) started.
@@ -179,4 +257,548 @@
         3 actionable tasks: 3 up-to-date
         a.alenushka@nblx-std-cf85cd:~/work/invest-testing/admin$
     </m2>
+    <m3>
+        [/home/a.alenushka/.gradle/caches/modules-2/files-2.1/com.google.protobuf/protoc/3.25.5/601137f5367caaf202a28e3844dd6dbbc77b19af/protoc-3.25.5-linux-x86_64.exe,
+        -I/home/a.alenushka/work/invest-testing/admin/build/extracted-protos/main,
+        -I/home/a.alenushka/work/invest-testing/admin/src/main/resources/proto,
+        -I/home/a.alenushka/work/invest-testing/admin/build/extracted-include-protos/main,
+        --java_out=/home/a.alenushka/work/invest-testing/admin/build/generated/source/proto/main/java,
+        --kotlin_out=/home/a.alenushka/work/invest-testing/admin/build/generated/source/proto/main/kotlin,
+        /home/a.alenushka/work/invest-testing/admin/src/main/resources/proto/testing-notification-event.proto]
+    </m3>
+    <m4>
+        tgpt/t-pro-it-1-0
+        Базовая модель для промптинга на русском языке. Для генерации текстов, диалогов, RAG, перевода, суммаризации, классификации, генерации кода/тестов и других задач.
+        30000
+
+        токенов / мин.
+
+        tgpt/llama-3-3-70b
+        Используется для ассистентов, instruct-модель
+        30000
+
+        токенов / мин.
+
+        tgpt/gemma-3-27b-it
+        SOTA от гугла, instruct-модель, может в reasoning, может в question answering, summarization, and reasoning
+        30000
+
+        токенов / мин.
+
+        tgpt/qwen3-32b
+        Подойдет для генерации кода, выполнения инструкций, для математики и логического вывода, для агентов и диалогов. Поддерживает 100+ языков и диалектов.
+        30000
+
+        токенов / мин.
+
+        tgpt/qwen3-235b-a22b
+        Как Qwen3-32b, только мощнее. Модель с контекстным окном 32к, структурным выводом и tool-calling. Поддерживает thinking и non-thinking режим (/no_think в промпте). Используйте для агентов и кода.
+        1000000
+
+        токенов / мин.
+
+        tgpt/t-pro-it-1-2-fp8
+        Базовая модель для промптинга на русском языке (NEW). Для генерации текстов, диалогов, RAG, перевода, суммаризации, классификации, генерации кода/тестов и других задач. Лучше слушается промпта. Дообучена на внутренних задачах.
+        100000
+
+        токенов / мин.
+
+        openai/gpt-4.1
+        Для задач, где важны точность, скорость, обработка сложных запросов и работа с большим объёмом данных
+        50000
+
+        токенов / мин.
+
+        openai/o4-mini
+        Для массовых задач с большим количеством запросов: работа с текстом, кодинг
+        50000
+
+        токенов / мин.
+
+        openrouter/openai/gpt-4o-search-preview
+        Встренный поиск, для работы с текстом, для кодинга, ассистентов, суммаризации
+        50000
+
+        токенов / мин.
+
+        azure/gpt-3.5-turbo
+        Для работы с текстом, чат-ботов, ассистентов
+        16000
+
+        токенов / мин.
+
+        azure/gpt-4
+        Для работы с текстом, кодинга, анализа больших объёмов данных
+        50000
+
+        токенов / мин.
+
+        azure/gpt-4o
+        Для генерации и перевода текста, для кодинга, ассистентов, суммаризации
+        50000
+
+        токенов / мин.
+
+        azure/gpt-4o-mini
+        Самая быстрая и дешевая в семействе openAI, для повседневых задач
+        50000
+
+        токенов / мин.
+
+        azure/o3-mini
+        Для быстрых и экономичных решений сложных задач: математика, кодинг
+        50000
+
+        токенов / мин.
+
+        azure/gpt-4.1
+        Для задач, где важны точность, скорость, обработка сложных запросов и работа с большим объёмом данных
+        50000
+
+        токенов / мин.
+
+        azure/gpt-4.1-mini
+        Для задач, где важны быстрый отклик, низкая стоимость и высокая точность, для работы с кодом, обработке длинных текстов
+        50000
+
+        токенов / мин.
+
+        openai/gpt-4.1-mini
+        Для задач, где важны быстрый отклик, низкая стоимость и высокая точность, для работы с кодом, обработке длинных текстов
+        50000
+
+        токенов / мин.
+
+        openai/gpt-4.1-nano
+        Для простых и массовых задач: классификация, автодополнение, чат-боты и автоматизация рабочих процессов
+        50000
+
+        токенов / мин.
+
+        openai/gpt-4.5-preview
+        Для сложных задач: кодинг, анализ, исследования
+        50000
+
+        токенов / мин.
+
+        openai/gpt-4o
+        Для генерации и перевода текста, для кодинга, ассистентов, суммаризации, ризонинга
+        50000
+
+        токенов / мин.
+
+        openai/gpt-4o-mini
+        Самая быстрая и дешевая в семействе openAI, для повседневых задач, чат-боты, работа с текстом
+        50000
+
+        токенов / мин.
+
+        openai/o1
+        Для сложных задач, требующих глубокого анализа и рассуждений: кодинг, математика
+        50000
+
+        токенов / мин.
+
+        openai/o1-pro
+        Для сложных задач, требующих глубокого анализа и рассуждений: кодинг, математика
+        50000
+
+        токенов / мин.
+
+        openai/o3
+        Для сложных задач, требующих глубокого анализа и рассуждений: кодинг, математика
+        50000
+
+        токенов / мин.
+
+        openai/o3-mini
+        Для быстрых и экономичных решений сложных задач: математика, кодинг
+        50000
+
+        токенов / мин.
+
+        openai/o1-mini
+        Для кодинга, математики
+        50000
+
+        токенов / мин.
+
+        openai/chatgpt-4o-latest
+        Для работы с текстом, для автоматизации
+        50000
+
+        токенов / мин.
+
+        openai/gpt-3.5-turbo
+        Для работы с текстом, чат-ботов, ассистентов
+        16000
+
+        токенов / мин.
+
+        openai/codex-mini
+        Для работы с codex cli
+        50000
+
+        токенов / мин.
+
+        anthropic/claude-sonnet-4-20250514
+        Для сложных задач кодинга, работы с большими объемами данных, текста и документов, для автоматизации
+        50000
+
+        токенов / мин.
+
+        anthropic/claude-3-7-sonnet-20250219
+        Для сложных, многошаговых задач, кодинга
+        50000
+
+        токенов / мин.
+
+        anthropic/claude-3-5-haiku-20241022
+        Для кодинга, эффективной обработки и классификации больших объёмов неструктурированных данных
+        50000
+
+        токенов / мин.
+
+        anthropic/claude-3-5-sonnet-20241022
+        Для сложных задач кодинга, анализа данных и текста, для автоматизации
+        50000
+
+        токенов / мин.
+
+        anthropic/claude-3-5-sonnet-20240620
+        Для сложных задач кодинга, работы с текстом, автоматизации, где важны глубокое понимание контекста и умение работать со сложными инструкциями
+        50000
+
+        токенов / мин.
+
+        anthropic/claude-3-haiku-20240307
+        Для быстрой обработки и анализа больших объёмов неструктурированных данных, для автоматизации
+        50000
+
+        токенов / мин.
+
+        tgpt/t-pro-it-2-0-fp8
+        Флагманская ризонинг-модель для русского языка. Может применяться в разных кейсах: от решения алгоритмических задач и математики до диалоговости, логического мышления и режима рассуждений.
+        50000
+
+        токенов / мин.
+
+        perplexity/sonar
+        Для поиска актуальной информации в реальном времени с высокой точностью
+        50000
+
+        токенов / мин.
+
+        perplexity/sonar-reasoning
+        Для логических и аналитических задач, требующих многошагового рассуждения, анализа, синтеза информации и обоснования решений
+        50000
+
+        токенов / мин.
+
+        perplexity/sonar-reasoning-pro
+        Для исследовательских задач с обоснованием по сложным темам, для отчётов и аналитики с большим количеством ссылок и доказательств
+        50000
+
+        токенов / мин.
+
+        perplexity/sonar-deep-research
+        Для исследовательских задач с обоснованием по сложным темам, для отчётов и аналитики
+        50000
+
+        токенов / мин.
+
+        openai/gpt-5
+        GPT‑5 создаёт высококачественный код, генерирует интерфейс с минимальным количеством подсказок и демонстрирует улучшения в плане индивидуальности, управляемости и выполнения длинных цепочек вызовов инструментов.
+        50000
+
+        токенов / мин.
+
+        openai/gpt-5-nano
+        Cамая быстрая и дешёвая версия GPT-5. Она отлично подходит для задач реферирования и классификации.
+        50000
+
+        токенов / мин.
+
+        openrouter/openai/gpt-5-nano
+        Cамая быстрая и дешёвая версия GPT-5. Она отлично подходит для задач реферирования и классификации.
+        50000
+
+        токенов / мин.
+
+        openai/gpt-5-chat-latest
+        Ссылается на снимок GPT-5, который в настоящее время используется в ChatGPT.
+        50000
+
+        токенов / мин.
+
+        openrouter/openai/gpt-5-chat
+        Ссылается на снимок GPT-5, который в настоящее время используется в ChatGPT.
+        50000
+
+        токенов / мин.
+
+        openai/gpt-5-mini
+        Это более быстрая и экономичная версия GPT-5. Она отлично подходит для чётко сформулированных задач и точных подсказок.
+        50000
+
+        токенов / мин.
+
+        openrouter/openai/gpt-5-mini
+        Это более быстрая и экономичная версия GPT-5. Она отлично подходит для чётко сформулированных задач и точных подсказок.
+        50000
+
+        токенов / мин.
+
+        tgpt/qwen3-coder-480b-a35b-instruct
+        Мощная языковая модель, оптимизированная для кодирования, анализа и генерации программного кода, поддерживает множество языков программирования.
+        350000
+
+        токенов / мин.
+
+        tgpt/qwen3-235b-a22b-instruct-2507
+        Предназначена для выполнения задач, связанных с генерацией текста, обработкой инструкций и сложным контекстным анализом. Оптимизирована для диалоговых систем, автоматизации процессов и интеллектуального поиска.
+        1000000
+
+        токенов / мин.
+
+        perplexity/sonar-pro
+        Расширенный поиск с улучшенными результатами поиска
+        50000
+
+        токенов / мин.
+
+        tgpt/text-embedding-multilingual-e5-small
+        Универсальная многоязычная модель для эмбеддингов. Быстрая за счет своего небольшого размера (в сравнении с multilingual-e5-large). Размерность - 384.
+        1000000
+
+        токенов / мин.
+
+        tgpt/text-embedding-bge-m3
+        Мультиязычные эмбеддинги для retrienval-пайплайнов в RAG. Размерность - 1024, максимальный контекст - 8192.
+        1000000
+
+        токенов / мин.
+
+        tgpt/text-embedding-multilingual-e5-large
+        Универсальная многоязычная модель для эмбеддингов. Более точная, чем multilingual-e5-small за счет бОльшего размера. Размерность - 1024.
+        1000000
+
+        токенов / мин.
+
+        azure/o4-mini
+        Для массовых задач с большим количеством запросов: работа с текстом, кодинг
+        50000
+
+        токенов / мин.
+
+        openrouter/openai/gpt-5
+        GPT‑5 создаёт высококачественный код, генерирует интерфейс с минимальным количеством подсказок и демонстрирует улучшения в плане индивидуальности, управляемости и выполнения длинных цепочек вызовов инструментов.
+        50000
+
+        токенов / мин.
+
+        openrouter/google/gemini-2.5-pro
+        Для кода, текстов, математики
+        50000
+
+        токенов / мин.
+
+        openrouter/z-ai/glm-4.5
+        Новая флагманская модель для агентных приложений с архитектурой MoE, поддержкой 128k токенов и улучшенными возможностями в логике, генерации кода и согласовании агентов.
+        300000
+
+        токенов / мин.
+
+        openrouter/z-ai/glm-4.5-air
+        Облегчённая версия флагманской модели с архитектурой MoE, оптимизированная для агентных приложений с поддержкой двух режимов работы.
+        300000
+
+        токенов / мин.
+
+        openrouter/moonshotai/kimi-k2-0905
+        Обновлённая MoE-модель с 1 трлн параметров, улучшенным кодированием, поддержкой 256k токенов и продвинутыми агентными возможностями.
+        300000
+
+        токенов / мин.
+
+        openrouter/moonshotai/kimi-k2
+        MoE-модель с 1 трлн параметров, оптимизированная для агентного ИИ с продвинутыми возможностями в кодировании, логике и использовании инструментов.
+        300000
+
+        токенов / мин.
+
+        openrouter/deepseek/deepseek-v3.1-terminus
+        Обновлённая гибридная модель с 671 млрд параметров, улучшенными агентными возможностями, поддержкой 128K токенов и эффективным выводом через FP8
+        300000
+
+        токенов / мин.
+
+        openrouter/deepseek/deepseek-r1-0528
+        Открытая модель с 671 миллиардом параметров, из которых 37 миллиардов активны при инференсе
+        300000
+
+        токенов / мин.
+
+        openrouter/google/gemini-2.5-flash
+        Передовая модель Google, оптимизированная для сложных задач: логические рассуждения, кодирование, математика и научные вычисления
+        300000
+
+        токенов / мин.
+
+        openrouter/deepseek/deepseek-chat-v3.1
+        Гибридная модель рассуждений, 671 млрд параметров, окно 164K токенов. Подходит для исследований, программирования и сложных задач.
+        164000
+
+        токенов / мин.
+
+        openrouter/deepseek/deepseek-chat-v3-0324
+        685 млрд параметров, топовая модель для диалогов от deepseek
+        163840
+
+        токенов / мин.
+
+        openrouter/deepseek/deepseek-v3.2-exp
+        Экспериментальная модель с DeepSeek Sparse Attention (DSA)
+        163840
+
+        токенов / мин.
+
+        tgpt/gpt-oss-120b
+        Модель от OpenAI на 120b параметров для вычислений, агентных задач и разработки. Используйте в промпте Reasoning: High/Low/Medium для настройки степени ризонинга. Сами рассуждения будут в поле reasoning_content.
+        262000
+
+        токенов / мин.
+
+        openrouter/z-ai/glm-4.6
+        Флагманская модель для агентных приложений с архитектурой MoE, поддержкой 200k токенов и улучшенными возможностями в логике, генерации кода и согласовании агентов.
+        300000
+
+        токенов / мин.
+
+        tgpt/qwen3-next-80b-a3b-instruct
+        Отлично подходит для любых задач генерации. Высокие результаты в математическом рассуждении и строгом следовании инструкциям. Используйте как аналог qwen3-32b
+        262144
+
+        токенов / мин.
+
+        openrouter/openai/gpt-5.1
+        Универсальная модель. Контекстное окно – 400к токенов (против 272 тыс. у GPT-5). Есть адаптивное рассуждение – регулирует глубину обработки в зависимости от сложности запроса, повышая точность и эффективность
+        50000
+
+        токенов / мин.
+
+        openrouter/openai/gpt-5.1-chat
+        Для анализа текстов, коммуникаций и живого общения. Есть эмоциальная адаптивность (понимает настроение и намерения, подстраивает стиль общения). Введена поддержка chain-of-thought прямо в чате
+        50000
+
+        токенов / мин.
+
+        openrouter/google/gemini-3-pro-preview
+        SOTA от Google
+        50000
+
+        токенов / мин.
+
+        openrouter/qwen/qwen3-8b
+        Легкая модель для максимальной скорости ответов
+        100000
+
+        токенов / мин.
+
+        anthropic/claude-opus-4-5-20251101
+        Исключительная модель для специализированных сложных задач
+        5000
+
+        токенов / мин.
+
+        openrouter/minimax/minimax-m2
+        MiniMax-M2 — это компактная и высокопроизводительная большая языковая модель, оптимизированная для сквозных задач программирования и агентных рабочих процессов
+        100000
+
+        токенов / мин.
+
+        openrouter/anthropic/claude-sonnet-4.5
+        SOTA Anthropic
+        50000
+
+        токенов / мин.
+
+        openai/gpt-5.1
+        Универсальная модель. Контекстное окно – 400к токенов (против 272 тыс. у GPT-5). Есть адаптивное рассуждение – регулирует глубину обработки в зависимости от сложности запроса, повышая точность и эффективность
+        50000
+
+        токенов / мин.
+
+        openrouter/x-ai/grok-4.1-fast
+        Лучшая модель xAI для агентских задач, особенно эффективная в реальных сценариях, таких как поддержка клиентов и глубокие исследования. Контекстное окно — 2 миллиона токенов. Режим рассуждений можно включать или отключать с помощью параметра reasoning_enabled в API.
+        50000
+
+        токенов / мин.
+
+        openai/gpt-5.2-2025-12-11
+        Последняя модель от OpenAI
+        50000
+
+        токенов / мин.
+
+        openai/gpt-5.2-pro-2025-12-11
+        Лучшая, но очень дорогая модель OpenAI, она в 10 раз дороже обычной gpt-5.2
+        5000
+
+        токенов / мин.
+
+        openai/gpt-5.2-chat-latest
+        Лучшая модель OpenAI для онлайн чата и анализа коммуникаций
+        50000
+
+        токенов / мин.
+
+        openrouter/openai/gpt-5.2
+        Последняя модель от OpenAI
+        50000
+
+        токенов / мин.
+
+        openrouter/openai/gpt-5.2-pro
+        Лучшая, но очень дорогая модель OpenAI, она в 10 раз дороже обычной gpt-5.2
+        5000
+
+        токенов / мин.
+
+        openrouter/openai/gpt-5.2-chat
+        Лучшая модель OpenAI для онлайн чата и анализа коммуникаций
+        50000
+
+        токенов / мин.
+
+        tgpt/t-pro-it-2-1-fp8
+        Обновленная флагманская модель, дообученная на внутренних запросах Банка. Улучшенное следование инструкциям и tool calliing.
+        240000
+
+        токенов / мин.
+
+        openrouter/google/gemini-3-flash-preview
+        Самая свежая быстрая модель от Google
+        100000
+
+        токенов / мин.
+
+        openrouter/deepseek/deepseek-v3.2
+        Последняя модель DeepSeek
+        300000
+
+        токенов / мин.
+
+        openrouter/moonshotai/kimi-k2.5
+        Последняя универсальная модель MoonshotAI
+        300000
+
+        токенов / мин.
+
+        openrouter/minimax/minimax-m2.5
+        Расширяет навыки кодинга M2.1 до офисных задач: создание и редактирование файлов Word/Excel/PowerPoint и работа в команде людей/агентов. Показывает высокие результаты на SWE-Bench и других бенчмарках и более экономно расходует токены за счёт планирования.
+        100000
+
+        токенов / мин.
+    </m4>
 </messages>
